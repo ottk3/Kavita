@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using API.Comparators;
@@ -9,6 +10,7 @@ using API.Entities;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Helpers;
+using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
 using Hangfire;
 using Microsoft.Extensions.Logging;
@@ -46,10 +48,11 @@ public class MetadataService : IMetadataService
     private readonly ICacheHelper _cacheHelper;
     private readonly IReadingItemService _readingItemService;
     private readonly IDirectoryService _directoryService;
+    private readonly IImageService _imageService;
     private readonly IList<SignalRMessage> _updateEvents = new List<SignalRMessage>();
     public MetadataService(IUnitOfWork unitOfWork, ILogger<MetadataService> logger,
         IEventHub eventHub, ICacheHelper cacheHelper,
-        IReadingItemService readingItemService, IDirectoryService directoryService)
+        IReadingItemService readingItemService, IDirectoryService directoryService, IImageService imageService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -57,6 +60,7 @@ public class MetadataService : IMetadataService
         _cacheHelper = cacheHelper;
         _readingItemService = readingItemService;
         _directoryService = directoryService;
+        _imageService = imageService;
     }
 
     /// <summary>
@@ -121,19 +125,48 @@ public class MetadataService : IMetadataService
     /// </summary>
     /// <param name="series"></param>
     /// <param name="forceUpdate">Force updating cover image even if underlying file has not been modified or chapter already has a cover image</param>
-    private Task UpdateSeriesCoverImage(Series? series, bool forceUpdate)
+    private async Task UpdateSeriesCoverImage(Series? series, bool forceUpdate)
     {
-        if (series == null) return Task.CompletedTask;
-
-        if (!_cacheHelper.ShouldUpdateCoverImage(_directoryService.FileSystem.Path.Join(_directoryService.CoverImageDirectory, series.CoverImage),
+        if (series == null || !_cacheHelper.ShouldUpdateCoverImage(_directoryService.FileSystem.Path.Join(_directoryService.CoverImageDirectory, series.CoverImage),
                 null, series.Created, forceUpdate, series.CoverImageLocked))
-            return Task.CompletedTask;
+            return;
 
         series.Volumes ??= new List<Volume>();
-        series.CoverImage = series.GetCoverImage();
+
+        var oldPath = series.CoverImage;
+
+
+        // If the series folder path is set and there is a cover.* in the folder, use it over the archive
+        if (!string.IsNullOrEmpty(series.FolderPath))
+        {
+            // This method only checks the top level directory, thus indicating this is a series cover
+            var seriesCover = _directoryService
+                .GetFilesWithExtension(series.FolderPath, Parser.ImageFileExtensions)
+                .FirstOrDefault(f =>
+                {
+                    var info = _directoryService.FileSystem.FileInfo.New(f);
+                    return info.Name.Replace(info.Extension, string.Empty)
+                        .Equals("cover", StringComparison.InvariantCultureIgnoreCase);
+                });
+
+            if (!string.IsNullOrEmpty(seriesCover))
+            {
+                var settings = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
+
+                _imageService.WriteCoverThumbnail(seriesCover, ImageService.GetSeriesFormat(series.Id),
+                    _directoryService.CoverImageDirectory, settings.EncodeMediaAs, settings.CoverImageSize);
+
+                series.CoverImage = ImageService.GetSeriesFormat(series.Id) + settings.EncodeMediaAs.GetExtension();
+            }
+        }
+
+        if (series.CoverImage == null || series.CoverImage.Equals(oldPath))
+        {
+            series.CoverImage = series.GetCoverImage();
+        }
 
         _updateEvents.Add(MessageFactory.CoverUpdateEvent(series.Id, MessageFactoryEntityTypes.Series));
-        return Task.CompletedTask;
+        return;
     }
 
 
