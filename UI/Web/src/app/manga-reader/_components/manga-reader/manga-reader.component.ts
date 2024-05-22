@@ -601,7 +601,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     fromEvent(this.readingArea.nativeElement, 'scroll').pipe(debounceTime(20), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      if (this.readerMode === ReaderMode.Webtoon) return;
+      if (this.layoutMode === LayoutMode.Webtoon) return;
       if (this.readerMode === ReaderMode.LeftRight && this.FittingOption === FITTING_OPTION.HEIGHT) {
         this.rightPaginationOffset = (this.readingArea.nativeElement.scrollLeft) * -1;
         this.cdRef.markForCheck();
@@ -661,8 +661,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
           this.nextPage();
         }
         break;
-      case ReaderMode.Webtoon:
-        break;
     }
 
     if (event.key === KEY_CODES.ESC_KEY) {
@@ -703,7 +701,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   // If we are in double mode, we need to check if our current page is on a right edge or not, if so adjust by decrementing by 1
   adjustPagesForDoubleRenderer(pageNum: number) {
     if (pageNum === this.maxPages - 1) return pageNum;
-    if (this.readerMode !== ReaderMode.Webtoon && this.layoutMode !== LayoutMode.Single) {
+    if (this.layoutMode !== LayoutMode.Webtoon && this.layoutMode !== LayoutMode.Single) {
       return this.mangaReaderService.adjustForDoubleReader(pageNum);
     }
     return pageNum;
@@ -715,7 +713,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cdRef.markForCheck();
       return;
     }
-    if (this.layoutMode === LayoutMode.Single || this.readerMode === ReaderMode.Webtoon) return;
+    if (this.layoutMode === LayoutMode.Single || this.layoutMode === LayoutMode.Webtoon) return;
 
     this.generalSettingsForm.get('layoutMode')?.setValue(LayoutMode.Single);
     this.generalSettingsForm.get('layoutMode')?.disable();
@@ -960,7 +958,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   render() {
-    if (this.readerMode === ReaderMode.Webtoon) {
+    if (this.layoutMode === LayoutMode.Webtoon) {
       this.isLoading = false;
       this.cdRef.markForCheck();
     } else {
@@ -1056,7 +1054,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   onSwipeEnd(event: SwipeEvent) {
     // Positive number means swiping right/down, negative means left
     switch (this.readerMode) {
-      case ReaderMode.Webtoon: break;
       case ReaderMode.LeftRight:
         {
           if (event.direction !== 'x') return;
@@ -1138,7 +1135,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   handlePageChange(event: any, direction: KeyDirection) {
-    if (this.readerMode === ReaderMode.Webtoon) {
+    if (this.layoutMode === LayoutMode.Webtoon) {
       if (direction === KeyDirection.Right) {
         this.nextPage(event);
       } else {
@@ -1201,14 +1198,14 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     this.pagingDirectionSubject.next(PAGING_DIRECTION.BACKWARDS);
 
 
-    const pageAmount = this.readerMode === ReaderMode.Webtoon ? 1 : Math.max(this.canvasRenderer.getPageAmount(PAGING_DIRECTION.BACKWARDS),
+    const pageAmount = this.layoutMode === LayoutMode.Webtoon ? 1 : Math.max(this.canvasRenderer.getPageAmount(PAGING_DIRECTION.BACKWARDS),
                                 this.singleRenderer.getPageAmount(PAGING_DIRECTION.BACKWARDS),
                                 this.doubleRenderer.getPageAmount(PAGING_DIRECTION.BACKWARDS),
                                 this.doubleNoCoverRenderer.getPageAmount(PAGING_DIRECTION.BACKWARDS),
                                 this.doubleReverseRenderer.getPageAmount(PAGING_DIRECTION.BACKWARDS)
                               );
 
-    const notInSplit = this.readerMode === ReaderMode.Webtoon ? true : this.canvasRenderer.shouldMovePrev();
+    const notInSplit = this.layoutMode === LayoutMode.Webtoon ? true : this.canvasRenderer.shouldMovePrev();
 
     if ((this.pageNum - 1 < 0 && notInSplit)) {
       // Move to next volume/chapter automatically
@@ -1358,7 +1355,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
    * This is responsible for setting up the image variables. This will be moved out to different renderers
    */
   loadPage() {
-    if (this.readerMode === ReaderMode.Webtoon) return;
+    if (this.layoutMode === LayoutMode.Webtoon) return;
 
     this.isLoading = true;
     this.setCanvasImage();
@@ -1392,7 +1389,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   sliderDragUpdate(context: ChangeContext) {
     // This will update the value for value except when in webtoon due to how the webtoon reader
     // responds to page changes
-    if (this.readerMode !== ReaderMode.Webtoon) {
+    if (this.layoutMode !== LayoutMode.Webtoon) {
       this.setPageNum(context.value);
     }
   }
@@ -1534,19 +1531,15 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         this.readerModeSubject.next(ReaderMode.UpDown);
         break;
       case ReaderMode.UpDown:
-        this.readerModeSubject.next(ReaderMode.Webtoon);
-        break;
-      case ReaderMode.Webtoon:
         this.readerModeSubject.next(ReaderMode.LeftRight);
         break;
     }
 
     // We must set this here because loadPage from render doesn't call if we aren't page splitting
-    if (this.readerMode !== ReaderMode.Webtoon) {
+    if (this.layoutMode !== LayoutMode.Webtoon) {
       this.canvasImage = this.getPage(this.pageNum);
       this.currentImage.next(this.canvasImage);
       this.pageNumSubject.next({pageNum: this.pageNum, maxPages: this.maxPages});
-      //this.isLoading = true;
       this.cdRef.detectChanges(); // Must use detectChanges to ensure ViewChildren get updated again
     }
 
@@ -1557,7 +1550,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // This is menu only code
   updateForm() {
-    if ( this.readerMode === ReaderMode.Webtoon) {
+    if ( this.layoutMode === LayoutMode.Webtoon) {
       this.generalSettingsForm.get('pageSplitOption')?.disable()
       this.generalSettingsForm.get('fittingOption')?.disable()
       this.generalSettingsForm.get('layoutMode')?.disable();

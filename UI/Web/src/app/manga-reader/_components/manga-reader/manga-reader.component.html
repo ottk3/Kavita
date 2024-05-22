@@ -48,12 +48,12 @@
       </div>
     }
 
-    <app-loading [loading]="isLoading || (!(currentImage$ | async)?.complete && this.readerMode !== ReaderMode.Webtoon)" [absolute]="true"></app-loading>
+    <app-loading [loading]="isLoading || (!(currentImage$ | async)?.complete && (layoutMode === LayoutMode.Webtoon))" [absolute]="true"></app-loading>
     <div class="reading-area"
          ngSwipe (swipeEnd)="onSwipeEnd($event)" (swipeMove)="onSwipeMove($event)"
-         [ngStyle]="{'background-color': backgroundColor, 'height': readerMode === ReaderMode.Webtoon ? 'inherit' : '100dvh'}" #readingArea>
+         [ngStyle]="{'background-color': backgroundColor, 'height': layoutMode === LayoutMode.Webtoon ? 'inherit' : '100dvh'}" #readingArea>
 
-      @if (readerMode !== ReaderMode.Webtoon) {
+      @if (layoutMode !== LayoutMode.Webtoon) {
         <div (dblclick)="bookmarkPage($event)">
           <app-canvas-renderer
             [readerSettings$]="readerSettings$"
@@ -164,7 +164,7 @@
 
         <div class="row pt-4 ms-2 me-2 mb-2">
           <div class="col">
-            <button class="btn btn-icon" (click)="setReadingDirection();resetMenuCloseTimer();" [disabled]="readerMode === ReaderMode.Webtoon || readerMode === ReaderMode.UpDown" aria-describedby="reading-direction" [title]="t('reading-direction-tooltip') + readingDirection === ReadingDirection.LeftToRight ? t('left-to-right-alt') : t('right-to-left-alt')">
+            <button class="btn btn-icon" (click)="setReadingDirection();resetMenuCloseTimer();" [disabled]="layoutMode === LayoutMode.Webtoon || readerMode === ReaderMode.UpDown" aria-describedby="reading-direction" [title]="t('reading-direction-tooltip') + readingDirection === ReadingDirection.LeftToRight ? t('left-to-right-alt') : t('right-to-left-alt')">
               <i class="fa fa-angle-double-{{readingDirection === ReadingDirection.LeftToRight ? 'right' : 'left'}}" aria-hidden="true"></i>
               <span id="reading-direction" class="visually-hidden">{{readingDirection === ReadingDirection.LeftToRight ? t('left-to-right-alt') : t('right-to-left-alt')}}</span>
             </button>
@@ -195,6 +195,7 @@
                 <div class="col-md-6 col-sm-12">
                   <label for="page-splitting" class="form-label me-1">{{t('image-splitting-label')}}</label>
                   <app-page-split-icon [pageSplitOption]="pageSplitOption"></app-page-split-icon>
+
                   <select class="form-control" id="page-splitting" formControlName="pageSplitOption">
                     @for(opt of pageSplitOptionsTranslated; track opt.value) {
                       <option [value]="opt.value">{{opt.text}}</option>
@@ -205,6 +206,7 @@
                 <div class="col-md-6 col-sm-12">
                   <label for="page-fitting" class="form-label me-1">{{t('image-scaling-label')}}</label>
                   <app-image-scaling-icon [imageScalingOption]="FittingOption"></app-image-scaling-icon>
+
                   <select class="form-control" id="page-fitting" formControlName="fittingOption">
                     <option value="full-height">{{t('height')}}</option>
                     <option value="full-width">{{t('width')}}</option>
