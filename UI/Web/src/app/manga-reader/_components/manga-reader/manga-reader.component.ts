@@ -25,7 +25,7 @@ import {
   merge,
   Observable,
   ReplaySubject,
-  Subject,
+  Subject, switchMap,
   take,
   tap
 } from 'rxjs';
@@ -72,6 +72,7 @@ import {shareReplay} from "rxjs/operators";
 import {LayoutModeIconComponent} from "../layout-mode-icon/layout-mode-icon.component";
 import {PageSplitIconComponent} from "../page-split-icon/page-split-icon.component";
 import {ImageScalingIconComponent} from "../image-scaling-icon/image-scaling-icon.component";
+import {MangaLayoutModePipe} from "../../../_pipes/manga-layout-mode.pipe";
 
 
 const PREFETCH_PAGES = 10;
@@ -128,7 +129,8 @@ enum KeyDirection {
   imports: [NgStyle, NgIf, LoadingComponent, SwipeDirective, CanvasRendererComponent, SingleRendererComponent,
     DoubleRendererComponent, DoubleReverseRendererComponent, DoubleNoCoverRendererComponent, InfiniteScrollerComponent,
     NgxSliderModule, ReactiveFormsModule, NgFor, NgSwitch, NgSwitchCase, FittingIconPipe, ReaderModeIconPipe,
-    FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe, LayoutModeIconComponent, PageSplitIconComponent, ImageScalingIconComponent]
+    FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe, LayoutModeIconComponent,
+    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModePipe]
 })
 export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -350,6 +352,8 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
    * If we render 2 pages at once or 1
    */
   layoutMode: LayoutMode = LayoutMode.Single;
+  layoutModeSubject = new BehaviorSubject(this.layoutMode);
+  layoutMode$: Observable<LayoutMode> = this.layoutModeSubject.asObservable();
   /**
    * Background color for canvas/reader. User configured.
    */
@@ -517,9 +521,35 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.readerModeSubject.next(this.readerMode);
       this.pagingDirectionSubject.next(this.pagingDirection);
+      this.layoutModeSubject.next(this.layoutMode);
+
+      const layoutChanges$ = merge(this.layoutMode$,this.generalSettingsForm.get('layoutMode')?.valueChanges as Observable<LayoutMode>).pipe(
+        distinctUntilChanged(),
+        tap(mode => {
+          const changeOccurred = mode !== this.layoutMode;
+
+          this.layoutMode = mode;
+
+          console.log('Adjusting layout mode', this.layoutMode);
+
+          this.generalSettingsForm.get('layoutMode')!.setValue(this.layoutMode, {emitEvent: false});
+
+          this.disableDoubleRendererIfScreenTooSmall();
+          this.refreshSettingsForLayoutModeChange();
+          this.cdRef.detectChanges();
+
+          // Re-render the current page when we switch layouts
+          if (changeOccurred) {
+            this.setPageNum(this.adjustPagesForDoubleRenderer(this.pageNum));
+            this.loadPage();
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      );
 
       // We need a mergeMap when page changes
-      this.readerSettings$ = merge(this.generalSettingsForm.valueChanges, this.pagingDirection$, this.readerMode$).pipe(
+      this.readerSettings$ = merge(this.generalSettingsForm.valueChanges, this.pagingDirection$, this.readerMode$, layoutChanges$).pipe(
+        tap(_ => console.log('Updating reader settings in renderers')),
         map(_ => this.createReaderSettingsUpdate()),
         takeUntilDestroyed(this.destroyRef),
       );
@@ -545,34 +575,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         takeUntilDestroyed(this.destroyRef)
       ).subscribe(() => {});
 
-
-
-
-      this.generalSettingsForm.get('layoutMode')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(val => {
-
-        const changeOccurred = parseInt(val, 10) !== this.layoutMode;
-        this.layoutMode = parseInt(val, 10);
-
-        if (this.layoutMode === LayoutMode.Single) {
-          this.generalSettingsForm.get('pageSplitOption')?.setValue(this.user.preferences.pageSplitOption);
-          this.generalSettingsForm.get('pageSplitOption')?.enable();
-          this.generalSettingsForm.get('fittingOption')?.enable();
-          this.generalSettingsForm.get('emulateBook')?.enable();
-        } else {
-          this.generalSettingsForm.get('pageSplitOption')?.setValue(PageSplitOption.NoSplit);
-          this.generalSettingsForm.get('pageSplitOption')?.disable();
-          this.generalSettingsForm.get('fittingOption')?.setValue(this.mangaReaderService.translateScalingOption(ScalingOption.FitToHeight));
-          this.generalSettingsForm.get('fittingOption')?.disable();
-          this.generalSettingsForm.get('emulateBook')?.enable();
-        }
-        this.cdRef.markForCheck();
-
-        // Re-render the current page when we switch layouts
-        if (changeOccurred) {
-          this.setPageNum(this.adjustPagesForDoubleRenderer(this.pageNum));
-          this.loadPage();
-        }
-      });
+      layoutChanges$.subscribe(() => {});
 
       this.generalSettingsForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
         this.autoCloseMenu = this.generalSettingsForm.get('autoCloseMenu')?.value;
@@ -708,12 +711,12 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   disableDoubleRendererIfScreenTooSmall() {
-    if (window.innerWidth > window.innerHeight) {
+    if (window.innerWidth > window.innerHeight || this.layoutMode === LayoutMode.Webtoon) {
       this.generalSettingsForm.get('layoutMode')?.enable();
       this.cdRef.markForCheck();
       return;
     }
-    if (this.layoutMode === LayoutMode.Single || this.layoutMode === LayoutMode.Webtoon) return;
+    if (this.layoutMode === LayoutMode.Single) return; //  || this.layoutMode === LayoutMode.Webtoon
 
     this.generalSettingsForm.get('layoutMode')?.setValue(LayoutMode.Single);
     this.generalSettingsForm.get('layoutMode')?.disable();
@@ -1494,6 +1497,22 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     this.render();
   }
 
+  refreshSettingsForLayoutModeChange() {
+    if (this.layoutMode === LayoutMode.Single) {
+      this.generalSettingsForm.get('pageSplitOption')?.setValue(this.user.preferences.pageSplitOption);
+      this.generalSettingsForm.get('pageSplitOption')?.enable();
+      this.generalSettingsForm.get('fittingOption')?.enable();
+      this.generalSettingsForm.get('emulateBook')?.enable();
+    } else {
+      this.generalSettingsForm.get('pageSplitOption')?.setValue(PageSplitOption.NoSplit);
+      this.generalSettingsForm.get('pageSplitOption')?.disable();
+      this.generalSettingsForm.get('fittingOption')?.setValue(this.mangaReaderService.translateScalingOption(ScalingOption.FitToHeight));
+      this.generalSettingsForm.get('fittingOption')?.disable();
+      this.generalSettingsForm.get('emulateBook')?.enable();
+    }
+  }
+
+
   // This is menu code
   clickOverlayClass(side: 'right' | 'left') {
     if (!this.showClickOverlay) {
@@ -1521,6 +1540,25 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fullscreenEvent.next(true);
         this.render();
       });
+  }
+
+  // This is menu only code
+  toggleLayoutMode() {
+    switch(this.layoutMode) {
+      case LayoutMode.Single:
+        this.layoutModeSubject.next(LayoutMode.Double);
+        console.log('layout set to double')
+        break;
+      case LayoutMode.Double:
+        this.layoutModeSubject.next(LayoutMode.DoubleReversed);
+        break;
+      case LayoutMode.DoubleReversed:
+        this.layoutModeSubject.next(LayoutMode.Webtoon);
+        break;
+      case LayoutMode.Webtoon:
+        this.layoutModeSubject.next(LayoutMode.Single);
+        break;
+    }
   }
 
   // This is menu only code

@@ -41,6 +41,16 @@ $pointer-offset: 5px;
     padding: 20px 20px;
 }
 
+.top-menu {
+  display: flex;
+  margin-top: 5px;
+
+  .right-actions {
+    margin-left: auto;
+    padding-right: 3%;
+  }
+}
+
 
 
 

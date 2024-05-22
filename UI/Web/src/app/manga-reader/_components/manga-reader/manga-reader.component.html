@@ -11,14 +11,14 @@
     }
     @if (menuOpen) {
       <div class="fixed-top overlay" [@slideFromTop]="menuOpen">
-        <div style="display: flex; margin-top: 5px;">
+        <div class="top-menu">
           <button class="btn btn-icon" style="height: 100%" [title]="t('back')" (click)="closeReader()">
             <i class="fa fa-arrow-left" aria-hidden="true"></i>
             <span class="visually-hidden">{{t('back')}}</span>
           </button>
 
           <div>
-            <div style="font-weight: bold;">{{title}}
+            <div class="fw-bold">{{title}}
               @if (incognitoMode) {
                 <span class="clickable" (click)="turnOffIncognito()" role="button" [attr.aria-label]="t('incognito-alt')">(<i class="fa fa-glasses"  aria-hidden="true"></i><span class="visually-hidden">{{t('incognito-title')}}</span>)</span>
               }
@@ -28,11 +28,13 @@
               @if (totalSeriesPages > 0) {
                 <span>{{t('series-progress', {percentage: (Math.min(1, ((totalSeriesPagesRead + pageNum) / totalSeriesPages)) | percent)}) }}</span>
               }
+
+              Layout Mode: {{layoutMode | mangaLayoutMode}}
             </div>
           </div>
 
-          <div style="margin-left: auto; padding-right: 3%;">
-            <button class="btn btn-icon" title="Shortcuts" (click)="openShortcutModal()">
+          <div class="right-actions">
+            <button class="btn btn-icon" [title]="t('shortcuts-menu-alt')" (click)="openShortcutModal()">
               <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
               <span class="visually-hidden">{{t('shortcuts-menu-alt')}}</span>
             </button>
@@ -120,7 +122,8 @@
                                         [getPage]="getPageFn">
           </app-double-no-cover-renderer>
         </div>
-      } @else {
+      }
+      @else {
         @if (!isLoading && !inSetup) {
           <div class="webtoon-images">
             <app-infinite-scroller [pageNum]="pageNum"
@@ -176,6 +179,14 @@
             </button>
           </div>
           <div class="col">
+            <button class="btn btn-icon" (click)="toggleLayoutMode();resetMenuCloseTimer();" aria-describedby="layout-mode--button" [title]="t('layout-mode-tooltip') + (layoutMode | mangaLayoutMode)">
+              <app-layout-mode-icon [layoutMode]="layoutMode"></app-layout-mode-icon>
+              <span id="layout-mode--button" class="visually-hidden">
+                {{layoutMode | mangaLayoutMode}}
+              </span>
+            </button>
+          </div>
+          <div class="col">
             <button class="btn btn-icon" title="{{this.isFullscreen ? t('collapse') : t('fullscreen')}}" (click)="toggleFullscreen();resetMenuCloseTimer();">
               <i class="fa {{this.isFullscreen | fullscreenIcon}}" aria-hidden="true"></i>
               <span class="visually-hidden">{{this.isFullscreen ? t('collapse') : t('fullscreen')}}</span>
@@ -217,11 +228,13 @@
 
               <div class="row mb-2">
                 <div class="col-md-6 col-sm-12">
-                  <label for="layout-mode" class="form-label me-1">{{t('layout-mode-title')}}</label>
+                  <label for="layout-mode" class="form-label me-1">{{t('layout-mode-label')}}</label>
                   <app-layout-mode-icon [layoutMode]="layoutMode"></app-layout-mode-icon>
 
                   <select class="form-control" id="layout-mode" formControlName="layoutMode">
-                    <option [value]="opt.value" *ngFor="let opt of layoutModesTranslated">{{opt.text}}</option>
+                    @for (opt of layoutModesTranslated; track opt.value) {
+                      <option [value]="opt.value">{{opt.value | mangaLayoutMode }}</option>
+                    }
                   </select>
                 </div>
                 <div class="col-md-3 col-sm-12">
