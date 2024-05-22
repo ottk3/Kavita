@@ -1703,6 +1703,7 @@
         "bookmark-page-tooltip": "Bookmark Page",
         "unbookmark-page-tooltip": "Unbookmark Page",
         "bookmarks-title": "Bookmarks",
+        "layout-mode-title": "Layout Mode",
 
         "first-time-reading-manga": "Tap the image at any time to open the menu. You can configure different settings or go to page by clicking progress bar. Tap sides of image move to next/prev page.",
         "layout-mode-switched": "Layout mode switched to Single due to insufficient space to render double layout",

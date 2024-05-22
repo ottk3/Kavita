@@ -22,7 +22,7 @@ import { ScrollService } from 'src/app/_services/scroll.service';
 import { ReaderService } from '../../../_services/reader.service';
 import { PAGING_DIRECTION } from '../../_models/reader-enums';
 import { WebtoonImage } from '../../_models/webtoon-image';
-import { ManagaReaderService } from '../../_service/managa-reader.service';
+import { MangaReaderService } from '../../_service/manga-reader.service';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TranslocoDirective} from "@ngneat/transloco";
 import {MangaReaderComponent} from "../manga-reader/manga-reader.component";
@@ -67,7 +67,7 @@ const enum DEBUG_MODES {
 })
 export class InfiniteScrollerComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
 
-  private readonly mangaReaderService = inject(ManagaReaderService);
+  private readonly mangaReaderService = inject(MangaReaderService);
   private readonly readerService = inject(ReaderService);
   private readonly renderer = inject(Renderer2);
   private readonly scrollService = inject(ScrollService);

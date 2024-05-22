@@ -99,3 +99,58 @@ img {
       0px 0px 1px 0.5px rgb(0 0 0 / 43%);
   }
 }
+
+
+//=========================================
+//             UI components
+//=========================================
+
+// Splitting Icon
+.split {
+  height: 20px;
+  width: 40px;
+  z-index: 1;
+  top: 0;
+  overflow: hidden;
+  border: 2px solid #ccc;
+  vertical-align: sub;
+  display: inline-block;
+
+  &::before {
+    margin-left: 30%;
+  }
+
+  /* Control the left side */
+  .left-side {
+    height: 20px;
+    width: 20px;
+    background-color: rgba(255, 255, 255, 0.6);
+    margin-top: -16px;
+  }
+
+  /* Control the right side */
+  .right-side {
+    height: 20px;
+    margin-left: 20px;
+    width: 20px;
+    background-color: rgba(255, 255, 255, 0.6);
+    margin-top: -16px;
+  }
+
+  .none {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  // For layout only
+
+}
+
+.split-double {
+  height: 20px;
+  display: inline-block;
+  font-size: .7em;
+
+  .right {
+    left: -7px;
+  }
+}

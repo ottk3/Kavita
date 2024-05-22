@@ -17,6 +17,8 @@ export class LayoutModeIconPipe implements PipeTransform {
         return 'double-reversed';
       case LayoutMode.DoubleNoCover:
         return 'double'; // TODO: Validate
+      case LayoutMode.Webtoon:
+        return 'fa-arrows-alt-v';
     }
   }
 

@@ -443,7 +443,7 @@ public class Startup
                  || ex.Message.Contains("UnauthorizedAccessException"))
                 && baseUrl.Equals(Configuration.DefaultBaseUrl) && OsInfo.IsDocker)
             {
-                // Swallow the exception as the install is non-root and Docker
+                // Swallow the exception as the installation is non-root and Docker
                 return;
             }
             Log.Error(ex, "There was an error setting base url");

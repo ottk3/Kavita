@@ -1,0 +1,39 @@
+@switch (layoutMode) {
+  @case (LayoutMode.Single) {
+    <div class="split-double" aria-hidden="true">
+      <span class="fa-stack fa-1x">
+        <i class="fa-regular fa-square-full fa-stack-2x"></i>
+        <i class="fa fa-image fa-stack-1x"></i>
+      </span>
+    </div>
+  }
+  @case (LayoutMode.Double) {
+    <div class="split-double" aria-hidden="true">
+      <span class="fa-stack fa-1x">
+          <i class="fa-regular fa-square-full fa-stack-2x"></i>
+          <i class="fab fa-1 fa-stack-1x"></i>
+      </span>
+      <span class="fa-stack fa right">
+        <i class="fa-regular fa-square-full fa-stack-2x"></i>
+        <i class="fab fa-2 fa-stack-1x"></i>
+      </span>
+    </div>
+  }
+
+  @case (LayoutMode.DoubleReversed) {
+    <div class="split-double" aria-hidden="true">
+      <span class="fa-stack fa-1x">
+          <i class="fa-regular fa-square-full fa-stack-2x"></i>
+          <i class="fab fa-2 fa-stack-1x"></i>
+      </span>
+      <span class="fa-stack fa right">
+        <i class="fa-regular fa-square-full fa-stack-2x"></i>
+        <i class="fab fa-1 fa-stack-1x"></i>
+      </span>
+    </div>
+  }
+
+  @case (LayoutMode.Webtoon) {
+    <div class="split fa-solid fa-arrows-alt-v" style="width: 26px" aria-hidden="true"></div>
+  }
+}

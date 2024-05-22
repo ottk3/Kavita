@@ -52,7 +52,7 @@ import {ReaderService} from 'src/app/_services/reader.service';
 import {LayoutMode} from '../../_models/layout-mode';
 import {FITTING_OPTION, PAGING_DIRECTION} from '../../_models/reader-enums';
 import {ReaderSetting} from '../../_models/reader-setting';
-import {ManagaReaderService} from '../../_service/managa-reader.service';
+import {MangaReaderService} from '../../_service/manga-reader.service';
 import {CanvasRendererComponent} from '../canvas-renderer/canvas-renderer.component';
 import {DoubleRendererComponent} from '../double-renderer/double-renderer.component';
 import {DoubleReverseRendererComponent} from '../double-reverse-renderer/double-reverse-renderer.component';
@@ -69,6 +69,9 @@ import {SwipeDirective} from '../../../ng-swipe/ng-swipe.directive';
 import {LoadingComponent} from '../../../shared/loading/loading.component';
 import {translate, TranslocoDirective} from "@ngneat/transloco";
 import {shareReplay} from "rxjs/operators";
+import {LayoutModeIconComponent} from "../layout-mode-icon/layout-mode-icon.component";
+import {PageSplitIconComponent} from "../page-split-icon/page-split-icon.component";
+import {ImageScalingIconComponent} from "../image-scaling-icon/image-scaling-icon.component";
 
 
 const PREFETCH_PAGES = 10;
@@ -98,7 +101,7 @@ enum KeyDirection {
     templateUrl: './manga-reader.component.html',
     styleUrls: ['./manga-reader.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ManagaReaderService],
+    providers: [MangaReaderService],
     animations: [
         trigger('slideFromTop', [
             state('in', style({ transform: 'translateY(0)' })),
@@ -125,7 +128,7 @@ enum KeyDirection {
   imports: [NgStyle, NgIf, LoadingComponent, SwipeDirective, CanvasRendererComponent, SingleRendererComponent,
     DoubleRendererComponent, DoubleReverseRendererComponent, DoubleNoCoverRendererComponent, InfiniteScrollerComponent,
     NgxSliderModule, ReactiveFormsModule, NgFor, NgSwitch, NgSwitchCase, FittingIconPipe, ReaderModeIconPipe,
-    FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe]
+    FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe, LayoutModeIconComponent, PageSplitIconComponent, ImageScalingIconComponent]
 })
 export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -152,7 +155,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly toastr = inject(ToastrService);
   public readonly readerService = inject(ReaderService);
   public readonly utilityService = inject(UtilityService);
-  public readonly mangaReaderService = inject(ManagaReaderService);
+  public readonly mangaReaderService = inject(MangaReaderService);
 
   protected readonly KeyDirection = KeyDirection;
   protected readonly ReaderMode = ReaderMode;
@@ -442,14 +445,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     return 0;
   }
 
-  get SplitIconClass() {
-    if (this.mangaReaderService.isSplitLeftToRight(this.pageSplitOption)) {
-      return 'left-side';
-    } else if (this.mangaReaderService.isNoSplit(this.pageSplitOption)) {
-      return 'none';
-    }
-    return 'right-side';
-  }
+
 
   get FittingOption() { return this.generalSettingsForm?.get('fittingOption')?.value || FITTING_OPTION.HEIGHT; }
   get ReadingAreaWidth() {

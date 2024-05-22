@@ -10,7 +10,7 @@ import { BookmarkInfo } from 'src/app/_models/manga-reader/bookmark-info';
 @Injectable({
   providedIn: 'root'
 })
-export class ManagaReaderService {
+export class MangaReaderService {
 
   private pageDimensions: DimensionMap = {};
   private pairs: {[key: number]: number} = {};

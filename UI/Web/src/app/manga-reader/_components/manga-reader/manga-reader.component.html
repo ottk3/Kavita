@@ -170,7 +170,7 @@
             </button>
           </div>
           <div class="col">
-            <button class="btn btn-icon" [title]="t('reading-mode-tooltip')" (click)="toggleReaderMode();resetMenuCloseTimer();">
+            <button class="btn btn-icon" [title]="t('reading-mode-tooltip')" (click)="toggleReaderMode();resetMenuCloseTimer();" [disabled]="layoutMode === LayoutMode.Webtoon">
               <i class="fa {{this.readerMode | readerModeIcon}}" aria-hidden="true"></i>
               <span class="visually-hidden">{{t('reading-mode-tooltip')}}</span>
             </button>
@@ -193,17 +193,18 @@
             <form [formGroup]="generalSettingsForm">
               <div class="row mb-2">
                 <div class="col-md-6 col-sm-12">
-                  <label for="page-splitting" class="form-label">{{t('image-splitting-label')}}</label>&nbsp;
-                  <div class="split fa fa-image">
-                    <div class="{{SplitIconClass}}"></div>
-                  </div>
+                  <label for="page-splitting" class="form-label me-1">{{t('image-splitting-label')}}</label>
+                  <app-page-split-icon [pageSplitOption]="pageSplitOption"></app-page-split-icon>
                   <select class="form-control" id="page-splitting" formControlName="pageSplitOption">
-                    <option *ngFor="let opt of pageSplitOptionsTranslated" [value]="opt.value">{{opt.text}}</option>
+                    @for(opt of pageSplitOptionsTranslated; track opt.value) {
+                      <option [value]="opt.value">{{opt.text}}</option>
+                    }
                   </select>
                 </div>
 
                 <div class="col-md-6 col-sm-12">
-                  <label for="page-fitting" class="form-label">{{t('image-scaling-label')}}</label>&nbsp;<i class="{{FittingOption | fittingIcon}}" aria-hidden="true"></i>
+                  <label for="page-fitting" class="form-label me-1">{{t('image-scaling-label')}}</label>
+                  <app-image-scaling-icon [imageScalingOption]="FittingOption"></app-image-scaling-icon>
                   <select class="form-control" id="page-fitting" formControlName="fittingOption">
                     <option value="full-height">{{t('height')}}</option>
                     <option value="full-width">{{t('width')}}</option>
@@ -214,41 +215,9 @@
 
               <div class="row mb-2">
                 <div class="col-md-6 col-sm-12">
-                  <label for="layout-mode" class="form-label">Layout Mode</label>&nbsp;
-                  <ng-container [ngSwitch]="layoutMode">
-                    <ng-container *ngSwitchCase="LayoutMode.Single">
-                      <div class="split-double">
-                    <span class="fa-stack fa-1x">
-                        <i class="fa-regular fa-square-full fa-stack-2x"></i>
-                        <i class="fa fa-image fa-stack-1x"></i>
-                      </span>
-                      </div>
-                    </ng-container>
-                    <ng-container *ngSwitchCase="LayoutMode.Double">
-                      <div class="split-double">
-                    <span class="fa-stack fa-1x">
-                        <i class="fa-regular fa-square-full fa-stack-2x"></i>
-                        <i class="fab fa-1 fa-stack-1x"></i>
-                    </span>
-                        <span class="fa-stack fa right">
-                      <i class="fa-regular fa-square-full fa-stack-2x"></i>
-                      <i class="fab fa-2 fa-stack-1x"></i>
-                    </span>
-                      </div>
-                    </ng-container>
-                    <ng-container *ngSwitchCase="LayoutMode.DoubleReversed">
-                      <div class="split-double">
-                    <span class="fa-stack fa-1x">
-                        <i class="fa-regular fa-square-full fa-stack-2x"></i>
-                        <i class="fab fa-2 fa-stack-1x"></i>
-                    </span>
-                        <span class="fa-stack fa right">
-                      <i class="fa-regular fa-square-full fa-stack-2x"></i>
-                      <i class="fab fa-1 fa-stack-1x"></i>
-                    </span>
-                      </div>
-                    </ng-container>
-                  </ng-container>
+                  <label for="layout-mode" class="form-label me-1">{{t('layout-mode-title')}}</label>
+                  <app-layout-mode-icon [layoutMode]="layoutMode"></app-layout-mode-icon>
+
                   <select class="form-control" id="layout-mode" formControlName="layoutMode">
                     <option [value]="opt.value" *ngFor="let opt of layoutModesTranslated">{{opt.text}}</option>
                   </select>
