@@ -29,7 +29,7 @@
                 <span>{{t('series-progress', {percentage: (Math.min(1, ((totalSeriesPagesRead + pageNum) / totalSeriesPages)) | percent)}) }}</span>
               }
 
-              Layout Mode: {{layoutMode | mangaLayoutMode}}
+              Layout Mode: {{layoutMode | mangaLayoutModeText}}
             </div>
           </div>
 
@@ -196,22 +196,24 @@
             </button>
           </div>
           <div class="col">
-            <button class="btn btn-icon" (click)="toggleLayoutMode();resetMenuCloseTimer();" aria-describedby="layout-mode--button" [title]="t('layout-mode-tooltip') + (layoutMode | mangaLayoutMode)">
+            <button class="btn btn-icon" (click)="toggleLayoutMode();resetMenuCloseTimer();" aria-describedby="layout-mode--button" [title]="t('layout-mode-tooltip') + (layoutMode | mangaLayoutModeText)">
               <app-layout-mode-icon [layoutMode]="layoutMode" [needsPadding]="false"></app-layout-mode-icon>
               <span id="layout-mode--button" class="visually-hidden">
-                {{layoutMode | mangaLayoutMode}}
+                {{layoutMode | mangaLayoutModeText}}
               </span>
               <br/><span class="d-none d-md-inline">{{t('layout-mode-label')}}</span>
             </button>
+          </div>
+
+          <div class="col">
+            <button class="btn btn-icon" title="{{t('image-scaling-label')}} - {{FittingOption | fittingOptionText}}">
+              <app-image-scaling-icon [imageScalingOption]="FittingOption"></app-image-scaling-icon>
+              <span class="visually-hidden">{{FittingOption | fittingOptionText}}</span>
+              <br/><span class="d-none d-md-inline">{{t('image-scaling-label')}}</span>
+            </button>
 
           </div>
-<!--          <div class="col">-->
-<!--            <button class="btn btn-icon" title="{{this.isFullscreen ? t('collapse') : t('fullscreen')}}" (click)="toggleFullscreen();resetMenuCloseTimer();">-->
-<!--              <i class="fa {{this.isFullscreen | fullscreenIcon}}" aria-hidden="true"></i>-->
-<!--              <span class="visually-hidden">{{this.isFullscreen ? t('collapse') : t('fullscreen')}}</span>-->
-<!--            </button>-->
-<!--            <br/><span class="d-none d-md-inline">{{t('fullscreen')}}</span>-->
-<!--          </div>-->
+
           <div class="col">
             <button class="btn btn-icon" [title]="t('settings-tooltip')" (click)="toggleSettingsOpen();resetMenuCloseTimer();">
               <i class="fa fa-sliders-h" aria-hidden="true"></i>
@@ -241,9 +243,9 @@
                   <app-image-scaling-icon [imageScalingOption]="FittingOption"></app-image-scaling-icon>
 
                   <select class="form-control" id="page-fitting" formControlName="fittingOption">
-                    <option value="full-height">{{t('height')}}</option>
-                    <option value="full-width">{{t('width')}}</option>
-                    <option value="original">{{t('original')}}</option>
+                    <option [value]="FITTING_OPTION.HEIGHT">{{ FITTING_OPTION.HEIGHT | fittingOptionText }}</option>
+                    <option [value]="FITTING_OPTION.WIDTH">{{ FITTING_OPTION.WIDTH | fittingOptionText }}</option>
+                    <option [value]="FITTING_OPTION.ORIGINAL">{{ FITTING_OPTION.ORIGINAL | fittingOptionText }}</option>
                   </select>
                 </div>
               </div>
@@ -255,7 +257,7 @@
 
                   <select class="form-control" id="layout-mode" formControlName="layoutMode">
                     @for (opt of layoutModesTranslated; track opt.value) {
-                      <option [value]="opt.value">{{opt.value | mangaLayoutMode }}</option>
+                      <option [value]="opt.value">{{opt.value | mangaLayoutModeText }}</option>
                     }
                   </select>
                 </div>

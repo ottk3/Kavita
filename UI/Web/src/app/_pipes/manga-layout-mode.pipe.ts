@@ -3,10 +3,10 @@ import {TranslocoService} from "@ngneat/transloco";
 import {LayoutMode} from "../manga-reader/_models/layout-mode";
 
 @Pipe({
-  name: 'mangaLayoutMode',
+  name: 'mangaLayoutModeText',
   standalone: true
 })
-export class MangaLayoutModePipe implements PipeTransform {
+export class MangaLayoutModeTextPipe implements PipeTransform {
 
   translocoService = inject(TranslocoService);
   transform(value: LayoutMode): string {

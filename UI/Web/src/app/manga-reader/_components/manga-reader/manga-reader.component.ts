@@ -20,13 +20,13 @@ import {
   debounceTime,
   distinctUntilChanged,
   forkJoin,
-  fromEvent, last,
+  fromEvent,
   map,
   merge,
   Observable,
   ReplaySubject,
-  Subject, switchMap,
-  take, takeLast,
+  Subject,
+  take,
   tap
 } from 'rxjs';
 import {ChangeContext, LabelType, NgxSliderModule, Options} from 'ngx-slider-v2';
@@ -40,7 +40,7 @@ import {Breakpoint, KEY_CODES, UtilityService} from 'src/app/shared/_services/ut
 import {LibraryType} from 'src/app/_models/library/library';
 import {MangaFormat} from 'src/app/_models/manga-format';
 import {PageSplitOption} from 'src/app/_models/preferences/page-split-option';
-import {layoutModes, pageSplitOptions} from 'src/app/_models/preferences/preferences';
+import {layoutModes, pageSplitOptions, scalingOptions} from 'src/app/_models/preferences/preferences';
 import {ReaderMode} from 'src/app/_models/preferences/reader-mode';
 import {ReadingDirection} from 'src/app/_models/preferences/reading-direction';
 import {ScalingOption} from 'src/app/_models/preferences/scaling-option';
@@ -72,7 +72,8 @@ import {shareReplay} from "rxjs/operators";
 import {LayoutModeIconComponent} from "../layout-mode-icon/layout-mode-icon.component";
 import {PageSplitIconComponent} from "../page-split-icon/page-split-icon.component";
 import {ImageScalingIconComponent} from "../image-scaling-icon/image-scaling-icon.component";
-import {MangaLayoutModePipe} from "../../../_pipes/manga-layout-mode.pipe";
+import {MangaLayoutModeTextPipe} from "../../../_pipes/manga-layout-mode.pipe";
+import {FittingOptionTextPipe} from "../../../_pipes/fitting-option-text.pipe";
 
 
 const PREFETCH_PAGES = 10;
@@ -130,7 +131,7 @@ enum KeyDirection {
     DoubleRendererComponent, DoubleReverseRendererComponent, DoubleNoCoverRendererComponent, InfiniteScrollerComponent,
     NgxSliderModule, ReactiveFormsModule, NgFor, NgSwitch, NgSwitchCase, FittingIconPipe, ReaderModeIconPipe,
     FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe, LayoutModeIconComponent,
-    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModePipe]
+    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModeTextPipe, FittingOptionTextPipe]
 })
 export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -219,6 +220,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
   pageSplitOptionsTranslated = pageSplitOptions.map(this.translatePrefOptions);
   layoutModesTranslated = layoutModes.map(this.translatePrefOptions);
+  protected readonly scalingOptions = scalingOptions.filter(f => f.value !== ScalingOption.Automatic);
 
   isLoading = true;
   hasBookmarkRights: boolean = false; // TODO: This can be an observable
@@ -1743,4 +1745,5 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     return d;
   }
 
+  protected readonly FITTING_OPTION = FITTING_OPTION;
 }
