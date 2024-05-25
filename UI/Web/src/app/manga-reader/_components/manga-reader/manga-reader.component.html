@@ -33,11 +33,13 @@
             </div>
           </div>
 
+          <!-- Top Menu buttons -->
           <div class="right-actions">
-            <button class="btn btn-icon" [title]="t('shortcuts-menu-alt')" (click)="openShortcutModal()">
-              <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
-              <span class="visually-hidden">{{t('shortcuts-menu-alt')}}</span>
+            <button class="btn btn-icon" title="{{this.isFullscreen ? t('collapse') : t('fullscreen')}}" (click)="toggleFullscreen();resetMenuCloseTimer();">
+              <i class="fa {{this.isFullscreen | fullscreenIcon}}" aria-hidden="true"></i>
+              <span class="visually-hidden">{{this.isFullscreen ? t('collapse') : t('fullscreen')}}</span>
             </button>
+
             @if (!bookmarkMode && hasBookmarkRights) {
               <button class="btn btn-icon" role="checkbox" [attr.aria-checked]="CurrentPageBookmarked"
                       title="{{t(CurrentPageBookmarked ? 'unbookmark-page-tooltip' : 'bookmark-page-tooltip')}}" (click)="bookmarkPage()">
@@ -45,6 +47,11 @@
                 <span class="visually-hidden">{{t(CurrentPageBookmarked ? 'unbookmark-page-tooltip' : 'bookmark-page-tooltip')}}</span>
               </button>
             }
+
+            <button class="btn btn-icon" [title]="t('shortcuts-menu-alt')" (click)="openShortcutModal()">
+              <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
+              <span class="visually-hidden">{{t('shortcuts-menu-alt')}}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -165,25 +172,28 @@
           </div>
         }
 
+        <!-- Bottom Menu buttons -->
         <div class="row pt-4 ms-2 me-2 mb-2">
           <div class="col">
-            <button class="btn btn-icon" (click)="setReadingDirection();resetMenuCloseTimer();" [disabled]="layoutMode === LayoutMode.Webtoon || readerMode === ReaderMode.UpDown" aria-describedby="reading-direction" [title]="t('reading-direction-tooltip') + readingDirection === ReadingDirection.LeftToRight ? t('left-to-right-alt') : t('right-to-left-alt')">
-              @if (readingDirection === ReadingDirection.LeftToRight) {
-                <span aria-label="hidden">A</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            <button class="btn btn-icon" (click)="setReadingDirection();resetMenuCloseTimer();"
+                    [disabled]="layoutMode === LayoutMode.Webtoon"
+                    aria-describedby="reading-direction"
+                    [title]="t('reading-direction-tooltip') + readingDirection === ReadingDirection.LeftToRight ? t('left-to-right-alt') : t('right-to-left-alt')">
+              @if (readerMode === ReaderMode.LeftRight) {
+                <i class="fa fa-angle-double-{{readingDirection === ReadingDirection.LeftToRight ? 'right' : 'left'}}" aria-hidden="true"></i>
               } @else {
-                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span aria-label="hidden">A</span>
+                <i class="fa fa-angle-double-{{readingDirection === ReadingDirection.LeftToRight ? 'down' : 'up'}}" aria-hidden="true"></i>
               }
-<!--              <i class="fa fa-angle-double-{{readingDirection === ReadingDirection.LeftToRight ? 'right' : 'left'}}" aria-hidden="true"></i>-->
               <span id="reading-direction" class="visually-hidden">{{readingDirection === ReadingDirection.LeftToRight ? t('left-to-right-alt') : t('right-to-left-alt')}}</span>
+              <br/><span class="d-none d-md-inline">{{t('reading-direction-label')}}</span>
             </button>
-            <br/><span class="d-none d-md-inline">{{t('reading-direction-label')}}</span>
           </div>
           <div class="col">
             <button class="btn btn-icon" [title]="t('reading-mode-tooltip')" (click)="toggleReaderMode();resetMenuCloseTimer();" [disabled]="layoutMode === LayoutMode.Webtoon">
               <i class="fa {{this.readerMode | readerModeIcon}}" aria-hidden="true"></i>
               <span class="visually-hidden">{{t('reading-mode-tooltip')}}</span>
+              <br/><span class="d-none d-md-inline">{{t('reading-mode-tooltip')}}</span>
             </button>
-            <br/><span class="d-none d-md-inline">{{t('reading-mode-tooltip')}}</span>
           </div>
           <div class="col">
             <button class="btn btn-icon" (click)="toggleLayoutMode();resetMenuCloseTimer();" aria-describedby="layout-mode--button" [title]="t('layout-mode-tooltip') + (layoutMode | mangaLayoutMode)">
@@ -191,22 +201,24 @@
               <span id="layout-mode--button" class="visually-hidden">
                 {{layoutMode | mangaLayoutMode}}
               </span>
+              <br/><span class="d-none d-md-inline">{{t('layout-mode-label')}}</span>
             </button>
-            <br/><span class="d-none d-md-inline">{{t('layout-mode-label')}}</span>
+
           </div>
+<!--          <div class="col">-->
+<!--            <button class="btn btn-icon" title="{{this.isFullscreen ? t('collapse') : t('fullscreen')}}" (click)="toggleFullscreen();resetMenuCloseTimer();">-->
+<!--              <i class="fa {{this.isFullscreen | fullscreenIcon}}" aria-hidden="true"></i>-->
+<!--              <span class="visually-hidden">{{this.isFullscreen ? t('collapse') : t('fullscreen')}}</span>-->
+<!--            </button>-->
+<!--            <br/><span class="d-none d-md-inline">{{t('fullscreen')}}</span>-->
+<!--          </div>-->
           <div class="col">
-            <button class="btn btn-icon" title="{{this.isFullscreen ? t('collapse') : t('fullscreen')}}" (click)="toggleFullscreen();resetMenuCloseTimer();">
-              <i class="fa {{this.isFullscreen | fullscreenIcon}}" aria-hidden="true"></i>
-              <span class="visually-hidden">{{this.isFullscreen ? t('collapse') : t('fullscreen')}}</span>
-            </button>
-            <br/><span class="d-none d-md-inline">{{t('fullscreen')}}</span>
-          </div>
-          <div class="col">
-            <button class="btn btn-icon" [title]="t('settings-tooltip')" (click)="settingsOpen = !settingsOpen;resetMenuCloseTimer();">
+            <button class="btn btn-icon" [title]="t('settings-tooltip')" (click)="toggleSettingsOpen();resetMenuCloseTimer();">
               <i class="fa fa-sliders-h" aria-hidden="true"></i>
               <span class="visually-hidden">{{t('settings-tooltip')}}</span>
+              <br/><span class="d-none d-md-inline">{{t('settings-tooltip')}}</span>
             </button>
-            <br/><span class="d-none d-md-inline">{{t('settings-tooltip')}}</span>
+
           </div>
         </div>
         @if (settingsOpen && generalSettingsForm) {

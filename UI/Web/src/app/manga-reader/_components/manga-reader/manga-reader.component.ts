@@ -1554,6 +1554,12 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     return side === 'right' ? 'highlight-2' : 'highlight';
   }
 
+  // This is menu code
+  toggleSettingsOpen() {
+    this.settingsOpen = !this.settingsOpen;
+    this.cdRef.markForCheck();
+  }
+
   // This is menu only code
   promptForPage() {
     const question = translate('book-reader.go-to-page-prompt', {totalPages: this.maxPages});
