@@ -1687,6 +1687,7 @@
         "left-to-right-alt": "Left to Right",
         "right-to-left-alt": "Right to Left",
         "reading-direction-tooltip": "Reading Direction: ",
+        "reading-direction-label": "Reading Direction",
         "reading-mode-tooltip": "Reading Mode",
         "collapse": "Collapse",
         "fullscreen": "Fullscreen",
@@ -1704,8 +1705,8 @@
         "unbookmark-page-tooltip": "Unbookmark Page",
         "bookmarks-title": "Bookmarks",
 
-        "layout-mode-label": "{{preferences.layout-mode-label}}",
-        "layout-mode-tooltip": "{{preferences.layout-mode-tooltip}}",
+        "layout-mode-tooltip": "{{preferences.layout-mode-label}}",
+        "layout-mode-label": "Layout",
 
         "first-time-reading-manga": "Tap the image at any time to open the menu. You can configure different settings or go to page by clicking progress bar. Tap sides of image move to next/prev page.",
         "layout-mode-switched": "Layout mode switched to Single due to insufficient space to render double layout",

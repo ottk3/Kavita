@@ -34,6 +34,7 @@
   }
 
   @case (LayoutMode.Webtoon) {
-    <div class="split fa-solid fa-arrows-alt-v" style="width: 26px" aria-hidden="true"></div>
+    <!-- TODO: I need Robbie's help, I can't figure this out -->
+    <div [ngClass]="{'split': needsPadding, 'split no-margin': !needsPadding}" class="fa-solid fa-arrows-alt-v" style="width: 26px" aria-hidden="true"></div>
   }
 }

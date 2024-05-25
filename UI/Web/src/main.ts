@@ -139,11 +139,11 @@ bootstrapApplication(AppComponent, {
           storage: { useValue: localStorage },
           ttl: 604800
         }),
-        provideTranslocoPersistLang({
-          storage: {
-            useValue: localStorage,
-          },
-        }),
+        // provideTranslocoPersistLang({
+        //   storage: {
+        //     useValue: localStorage,
+        //   },
+        // }),
         { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
         { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
         preLoad,

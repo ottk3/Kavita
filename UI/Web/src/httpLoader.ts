@@ -1,15 +1,23 @@
 import {Injectable} from "@angular/core";
 import {HttpClient} from "@angular/common/http";
 import {Translation, TranslocoLoader} from "@ngneat/transloco";
-import cacheBusting from 'i18n-cache-busting.json'; // allowSyntheticDefaultImports must be true
+import cacheBusting from 'i18n-cache-busting.json';
+import {environment} from "./environments/environment"; // allowSyntheticDefaultImports must be true
 
 @Injectable({ providedIn: 'root' })
 export class HttpLoader implements TranslocoLoader {
+  isProd = environment.production;
   constructor(private http: HttpClient) {}
 
   getTranslation(langPath: string) {
     const tokens = langPath.split('/');
     const langCode = tokens[tokens.length - 1];
+
+    // let cacheCode = (Math.random() % 10000 + 1) + '';
+    // if (this.isProd) {
+    //   cacheCode = (cacheBusting as { [key: string]: string })[langCode];
+    // }
+
     const url = `assets/langs/${langCode}.json?v=${(cacheBusting as { [key: string]: string })[langCode]}`;
     console.log('loading locale: ', url);
     return this.http.get<Translation>(url);

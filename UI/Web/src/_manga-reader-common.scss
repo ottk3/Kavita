@@ -116,7 +116,7 @@ img {
   vertical-align: sub;
   display: inline-block;
 
-  &::before {
+  &:not(.no-margin)::before {
     margin-left: 30%;
   }
 

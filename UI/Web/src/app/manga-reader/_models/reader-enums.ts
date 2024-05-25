@@ -5,7 +5,7 @@ export enum FITTING_OPTION {
 }
 
 /**
- * How to split a page into virutal pages. Only works with LayoutMode.Single
+ * How to split a page into virtual pages. Only works with LayoutMode.Single
  */
 export enum SPLIT_PAGE_PART {
     NO_SPLIT = 'none',
