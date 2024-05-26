@@ -9,5 +9,7 @@ public enum LayoutMode
     [Description("Double")]
     Double = 2,
     [Description("Double (manga)")]
-    DoubleReversed = 3
+    DoubleReversed = 3,
+    [Description("Webtoon")]
+    Webtoon = 5
 }

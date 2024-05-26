@@ -13,7 +13,7 @@ import {
   OnInit,
   ViewChild
 } from '@angular/core';
-import {AsyncPipe, DOCUMENT, NgClass, NgFor, NgIf, NgStyle, NgSwitch, NgSwitchCase, PercentPipe} from '@angular/common';
+import {AsyncPipe, NgClass, NgFor, NgIf, NgStyle, NgSwitch, NgSwitchCase, PercentPipe} from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
 import {
   BehaviorSubject,
@@ -443,20 +443,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.readingArea?.nativeElement?.clientHeight + 'px';
   }
 
-  // This is for the pagination area
-  get MaxHeight() {
-    return '100dvh';
-  }
-
-  get RightPaginationOffset() {
-    if (this.readerMode === ReaderMode.LeftRight && this.FittingOption !== FITTING_OPTION.WIDTH) {
-      return (this.readingArea?.nativeElement?.scrollLeft || 0) * -1;
-    }
-    return 0;
-  }
-
-
-
   get FittingOption() { return this.generalSettingsForm?.get('fittingOption')?.value || FITTING_OPTION.HEIGHT; }
   get ReadingAreaWidth() {
     return this.readingArea?.nativeElement.scrollWidth - this.readingArea?.nativeElement.clientWidth;
@@ -467,7 +453,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
 
-  constructor(@Inject(DOCUMENT) private document: Document) {
+  constructor() {
     this.navService.hideNavBar();
     this.navService.hideSideNav();
     this.cdRef.markForCheck();
@@ -569,10 +555,9 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         tap(mode => {
           const changeOccurred = mode !== this.layoutMode;
 
-          console.log('layout mode observable tap triggered', mode);
+          //console.log('layout mode observable tap triggered', mode);
           if (changeOccurred) {
             this.layoutMode = mode;
-            console.log('Adjusting layout mode', this.layoutMode);
             this.generalSettingsForm.get('layoutMode')!.setValue(this.layoutMode);
 
             this.disableDoubleRendererIfScreenTooSmall(false);
@@ -593,7 +578,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.readerSettings$ = merge(formChanges$, this.pagingDirection$, this.readerMode$, this.readingDirection$).pipe(
         distinctUntilChanged(),
         debounceTime(100),
-        tap(_ => console.log('Updating reader settings in renderers')),
+        //tap(_ => console.log('Updating reader settings in renderers')),
         map(_ => this.createReaderSettingsUpdate()),
         takeUntilDestroyed(this.destroyRef),
       );
@@ -603,7 +588,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.pagingDirection$.pipe(
         distinctUntilChanged(),
         tap(dir => {
-          console.log('Updating paging direction');
           this.pagingDirection = dir;
           this.generalSettingsForm.get('pagingDirection')!.setValue(dir, {emitEvent: false});
           this.cdRef.markForCheck();
@@ -615,7 +599,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         distinctUntilChanged(),
         tap(mode => {
           this.readerMode = mode;
-          console.log('Updating reader mode');
           this.generalSettingsForm.get('readerMode')!.setValue(mode, {emitEvent: false});
           this.disableDoubleRendererIfScreenTooSmall();
           this.cdRef.markForCheck();
@@ -1578,7 +1561,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // This is menu only code
   toggleLayoutMode() {
-    console.log('Changing layout mode from button')
     switch(this.layoutMode) {
       case LayoutMode.Single:
         this.layoutModeSubject.next(LayoutMode.Double);
