@@ -73,29 +73,13 @@
         </div>
 
         <!-- Pagination controls and screen hints-->
-        <div class="pagination-area">
-          <div class="{{readerMode === ReaderMode.LeftRight ? 'left' : 'top'}} {{clickOverlayClass('left')}}" (click)="handlePageChange($event, KeyDirection.Left)"
-               [ngStyle]="{'height': (readerMode === ReaderMode.LeftRight ? MaxHeight: '25%'), 'max-height': MaxHeight}">
-            @if (showClickOverlay) {
-              <div>
-                <i class="fa fa-angle-{{readingDirection === ReadingDirection.RightToLeft ? 'double-' : ''}}{{readerMode === ReaderMode.LeftRight ? 'left' : 'up'}}"
-                   [title]="t('prev-page-tooltip')" aria-hidden="true"></i>
-              </div>
-            }
-          </div>
-          <div class="{{readerMode === ReaderMode.LeftRight ? 'right' : 'bottom'}} {{clickOverlayClass('right')}}" (click)="handlePageChange($event, KeyDirection.Right)"
-               [ngStyle]="{'height': (readerMode === ReaderMode.LeftRight ? MaxHeight: '25%'),
-                                'left': 'inherit',
-                                'right': RightPaginationOffset + 'px',
-                                'max-height': MaxHeight}">
-            @if (showClickOverlay) {
-              <div>
-                <i class="fa fa-angle-{{readingDirection === ReadingDirection.LeftToRight ? 'double-' : ''}}{{readerMode === ReaderMode.LeftRight ? 'right' : 'down'}}"
-                   [title]="t('next-page-tooltip')" aria-hidden="true"></i>
-              </div>
-            }
-          </div>
-        </div>
+        <app-manga-pagination-overlay
+          [readingArea]="readingArea"
+          [readerSettings$]="readerSettings$"
+          [showClickOverlay$]="showClickOverlay$"
+          (next)="nextPage($event)"
+          (prev)="prevPage($event)">
+        </app-manga-pagination-overlay>
 
         <div (dblclick)="bookmarkPage($event)">
           <app-single-renderer [image$]="currentImage$"

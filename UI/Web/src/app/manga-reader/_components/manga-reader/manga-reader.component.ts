@@ -74,6 +74,7 @@ import {PageSplitIconComponent} from "../page-split-icon/page-split-icon.compone
 import {ImageScalingIconComponent} from "../image-scaling-icon/image-scaling-icon.component";
 import {MangaLayoutModeTextPipe} from "../../../_pipes/manga-layout-mode.pipe";
 import {FittingOptionTextPipe} from "../../../_pipes/fitting-option-text.pipe";
+import {MangaPaginationOverlayComponent} from "../manga-pagination-overlay/manga-pagination-overlay.component";
 
 
 const PREFETCH_PAGES = 10;
@@ -91,7 +92,7 @@ enum ChapterInfoPosition {
   Next = 2
 }
 
-enum KeyDirection {
+export enum KeyDirection {
   Right = 0,
   Left = 1,
   Up = 2,
@@ -131,7 +132,7 @@ enum KeyDirection {
     DoubleRendererComponent, DoubleReverseRendererComponent, DoubleNoCoverRendererComponent, InfiniteScrollerComponent,
     NgxSliderModule, ReactiveFormsModule, NgFor, NgSwitch, NgSwitchCase, FittingIconPipe, ReaderModeIconPipe,
     FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe, LayoutModeIconComponent,
-    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModeTextPipe, FittingOptionTextPipe]
+    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModeTextPipe, FittingOptionTextPipe, MangaPaginationOverlayComponent]
 })
 export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -203,6 +204,9 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   generalSettingsForm!: FormGroup;
 
   readingDirection = ReadingDirection.LeftToRight;
+  readingDirectionSubject = new BehaviorSubject(this.readingDirection);
+  readingDirection$ = this.readingDirectionSubject.asObservable().pipe(distinctUntilChanged());
+
   scalingOption = ScalingOption.FitToHeight;
   pageSplitOption = PageSplitOption.FitSplit;
 
@@ -308,8 +312,8 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
    * If the click overlay is rendered on screen
    */
   showClickOverlay: boolean = false;
-  private showClickOverlaySubject: ReplaySubject<boolean> = new ReplaySubject();
-  showClickOverlay$ = this.showClickOverlaySubject.asObservable().pipe(distinctUntilChanged());
+  private showClickOverlaySubject: BehaviorSubject<boolean> = new BehaviorSubject(this.showClickOverlay);
+  showClickOverlay$ = this.showClickOverlaySubject.asObservable();
   /**
    * Next Chapter Id. This is not guaranteed to be a valid ChapterId. Prefetched on page load (non-blocking).
    */
@@ -532,11 +536,11 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       const formChanges$ = this.generalSettingsForm.valueChanges.pipe(
         distinctUntilChanged((prev, curr) => {
           const same = this.utilityService.deepEqual(prev, curr);
-          console.log('prev: ', prev, '  curr: ', curr, ' is same: ', same);
+          //console.log('prev: ', prev, '  curr: ', curr, ' is same: ', same);
           return same;
         }),
-        debounceTime(10),
-        tap(v => console.log('Form Value Change on formChanges$', v)),
+        //debounceTime(10),
+        //tap(v => console.log('Form Value Change on formChanges$', v)),
         takeUntilDestroyed(this.destroyRef)
       );
 
@@ -586,8 +590,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       layoutChanges$.subscribe();
 
       // We need a mergeMap when page changes
-      //merge(formChanges$, this.pagingDirection$, this.readerMode$).pipe( //, layoutChanges$
-      this.readerSettings$ = merge(formChanges$, this.pagingDirection$, this.readerMode$).pipe(
+      this.readerSettings$ = merge(formChanges$, this.pagingDirection$, this.readerMode$, this.readingDirection$).pipe(
         distinctUntilChanged(),
         debounceTime(100),
         tap(_ => console.log('Updating reader settings in renderers')),
@@ -629,7 +632,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
-    console.time('init');
     this.init();
   }
 
@@ -729,6 +731,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       pagingDirection: this.pagingDirection,
       readerMode: parseInt(this.generalSettingsForm.get('readerMode')?.value, 10), // this.readerMode,
       emulateBook: this.generalSettingsForm.get('emulateBook')?.value,
+      readingDirection: this.readingDirection
     };
   }
 
@@ -1039,6 +1042,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.startMenuCloseTimer();
     } else {
       this.showClickOverlay = false;
+      this.showClickOverlaySubject.next(false);
       this.settingsOpen = false;
       this.cdRef.markForCheck();
     }
@@ -1405,16 +1409,21 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   setReadingDirection() {
     if (this.readingDirection === ReadingDirection.LeftToRight) {
       this.readingDirection = ReadingDirection.RightToLeft;
+      this.readingDirectionSubject.next(ReadingDirection.RightToLeft);
     } else {
       this.readingDirection = ReadingDirection.LeftToRight;
+      this.readingDirectionSubject.next(ReadingDirection.LeftToRight);
     }
+
 
     if (this.menuOpen && this.user.preferences.showScreenHints) {
       this.showClickOverlay = true;
       this.showClickOverlaySubject.next(true);
+      this.cdRef.markForCheck();
       setTimeout(() => {
         this.showClickOverlay = false;
         this.showClickOverlaySubject.next(false);
+        this.cdRef.markForCheck();
       }, CLICK_OVERLAY_TIMEOUT);
     }
   }
@@ -1543,18 +1552,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-
-  // This is menu code
-  clickOverlayClass(side: 'right' | 'left') {
-    if (!this.showClickOverlay) {
-      return '';
-    }
-
-    if (this.readingDirection === ReadingDirection.LeftToRight) {
-      return side === 'right' ? 'highlight' : 'highlight-2';
-    }
-    return side === 'right' ? 'highlight-2' : 'highlight';
-  }
 
   // This is menu code
   toggleSettingsOpen() {

@@ -1,0 +1,52 @@
+@use '../../../../manga-reader-common';
+$side-width: 25%;
+
+.pagination-area {
+  $pagination-bg: rgba(0, 0, 0, 0);
+  //$pagination-bg: rgba(0, 0, 255, 0.4); // DEBUG CODE
+  cursor: pointer;
+  z-index: 100;
+
+  i {
+    color: white;
+    font-size: 42px;
+  }
+
+  .right {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: $side-width;
+    background: $pagination-bg;
+    max-height: calc(var(--vh)*100);
+    z-index: 100;
+  }
+
+  .top {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 100%;
+    background: $pagination-bg;
+    z-index: 100;
+  }
+
+  .left {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: $side-width;
+    background: $pagination-bg;
+    max-height: calc(var(--vh)*100);
+    z-index: 100;
+  }
+
+  .bottom {
+    position: fixed; // I couldn't figure out how to do this with abs, so only the bottom bar will not be scrollable
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    background: $pagination-bg;
+    z-index: 100;
+  }
+}
