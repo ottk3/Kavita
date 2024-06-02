@@ -21,6 +21,7 @@ import { DEBUG_MODES, ImageRenderer } from '../../_models/renderer';
 import { MangaReaderService } from '../../_service/manga-reader.service';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import { SafeStylePipe } from '../../../_pipes/safe-style.pipe';
+import {ScalingOption} from "../../../_models/preferences/scaling-option";
 
 /**
  * Renders 2 pages except on first page, last page, and before a wide image
@@ -132,7 +133,7 @@ export class DoubleRendererComponent implements OnInit, ImageRenderer {
 
     this.imageFitClass$ = this.readerSettings$.pipe(
       takeUntilDestroyed(this.destroyRef),
-      map(values => values.fitting),
+      map(values => this.mangaReaderService.translateScalingOption(values.scalingOption)),
       filter(_ => this.isValid()),
       shareReplay()
     );
@@ -140,10 +141,10 @@ export class DoubleRendererComponent implements OnInit, ImageRenderer {
     this.layoutClass$ = combineLatest([this.shouldRenderDouble$, this.readerSettings$]).pipe(
       takeUntilDestroyed(this.destroyRef),
       map((value) =>  {
-        if (value[0] && value[1].fitting === FITTING_OPTION.WIDTH) return 'fit-to-width-double-offset';
-        if (value[0] && value[1].fitting === FITTING_OPTION.HEIGHT) return 'fit-to-height-double-offset';
-        if (value[0] && value[1].fitting === FITTING_OPTION.ORIGINAL) return 'original-double-offset';
-        if (this.mangaReaderService.isWidePage(this.pageNum) ) return 'double-offset';
+        if (value[0] && value[1].scalingOption === ScalingOption.FitToWidth) return 'fit-to-width-double-offset';
+        if (value[0] && value[1].scalingOption === ScalingOption.FitToHeight) return 'fit-to-height-double-offset';
+        if (value[0] && value[1].scalingOption === ScalingOption.Original) return 'original-double-offset';
+        if (this.mangaReaderService.isWidePage(this.pageNum)) return 'double-offset';
         return '';
       }),
       filter(_ => this.isValid()),
@@ -154,6 +155,7 @@ export class DoubleRendererComponent implements OnInit, ImageRenderer {
       takeUntilDestroyed(this.destroyRef),
       tap(values => {
         this.layoutMode = values.layoutMode;
+        console.log('double renderer, layoutmode: ', this.layoutMode)
         this.pageSplit = values.pageSplit;
         this.cdRef.markForCheck();
       })

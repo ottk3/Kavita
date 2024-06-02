@@ -21,6 +21,7 @@ import { DEBUG_MODES } from '../../_models/renderer';
 import { MangaReaderService } from '../../_service/manga-reader.service';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import { SafeStylePipe } from '../../../_pipes/safe-style.pipe';
+import {ScalingOption} from "../../../_models/preferences/scaling-option";
 
 /**
  * Renders 2 pages except on last page, and before a wide image
@@ -134,7 +135,7 @@ export class DoubleNoCoverRendererComponent implements OnInit {
 
     this.imageFitClass$ = this.readerSettings$.pipe(
       takeUntilDestroyed(this.destroyRef),
-      map(values => values.fitting),
+      map(values => this.mangaReaderService.translateScalingOption(values.scalingOption)),
       filter(_ => this.isValid()),
       shareReplay()
     );
@@ -142,9 +143,9 @@ export class DoubleNoCoverRendererComponent implements OnInit {
     this.layoutClass$ = combineLatest([this.shouldRenderDouble$, this.readerSettings$]).pipe(
       takeUntilDestroyed(this.destroyRef),
       map((value) =>  {
-        if (value[0] && value[1].fitting === FITTING_OPTION.WIDTH) return 'fit-to-width-double-offset';
-        if (value[0] && value[1].fitting === FITTING_OPTION.HEIGHT) return 'fit-to-height-double-offset';
-        if (value[0] && value[1].fitting === FITTING_OPTION.ORIGINAL) return 'original-double-offset';
+        if (value[0] && value[1].scalingOption === ScalingOption.FitToWidth) return 'fit-to-width-double-offset';
+        if (value[0] && value[1].scalingOption === ScalingOption.FitToHeight) return 'fit-to-height-double-offset';
+        if (value[0] && value[1].scalingOption === ScalingOption.Original) return 'original-double-offset';
         return '';
       }),
       filter(_ => this.isValid()),

@@ -1,16 +1,16 @@
 import {Component, Input} from '@angular/core';
-import {FITTING_OPTION} from "../../_models/reader-enums";
-import {FittingIconPipe} from "../../../_pipes/fitting-icon.pipe";
+import {ScalingIconPipe} from "../../../_pipes/scaling-icon.pipe";
+import {ScalingOption} from "../../../_models/preferences/scaling-option";
 
 @Component({
   selector: 'app-image-scaling-icon',
   standalone: true,
   imports: [
-    FittingIconPipe
+    ScalingIconPipe
   ],
   templateUrl: './image-scaling-icon.component.html',
   styleUrl: './image-scaling-icon.component.scss'
 })
 export class ImageScalingIconComponent {
-  @Input({required: true}) imageScalingOption!: FITTING_OPTION;
+  @Input({required: true}) imageScalingOption!: ScalingOption;
 }

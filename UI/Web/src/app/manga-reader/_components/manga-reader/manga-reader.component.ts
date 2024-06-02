@@ -63,18 +63,18 @@ import {SwipeEvent} from 'src/app/ng-swipe/ag-swipe.core';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {FullscreenIconPipe} from '../../../_pipes/fullscreen-icon.pipe';
 import {ReaderModeIconPipe} from '../../../_pipes/reader-mode-icon.pipe';
-import {FittingIconPipe} from '../../../_pipes/fitting-icon.pipe';
+import {ScalingIconPipe} from '../../../_pipes/scaling-icon.pipe';
 import {InfiniteScrollerComponent} from '../infinite-scroller/infinite-scroller.component';
 import {SwipeDirective} from '../../../ng-swipe/ng-swipe.directive';
 import {LoadingComponent} from '../../../shared/loading/loading.component';
 import {translate, TranslocoDirective} from "@ngneat/transloco";
-import {shareReplay} from "rxjs/operators";
+import {combineLatest, shareReplay} from "rxjs";
 import {LayoutModeIconComponent} from "../layout-mode-icon/layout-mode-icon.component";
 import {PageSplitIconComponent} from "../page-split-icon/page-split-icon.component";
 import {ImageScalingIconComponent} from "../image-scaling-icon/image-scaling-icon.component";
 import {MangaLayoutModeTextPipe} from "../../../_pipes/manga-layout-mode.pipe";
-import {FittingOptionTextPipe} from "../../../_pipes/fitting-option-text.pipe";
 import {MangaPaginationOverlayComponent} from "../manga-pagination-overlay/manga-pagination-overlay.component";
+import {ScalingOptionTextPipe} from "../../../_pipes/scaling-option-text.pipe";
 
 
 const PREFETCH_PAGES = 10;
@@ -130,9 +130,9 @@ export enum KeyDirection {
     standalone: true,
   imports: [NgStyle, NgIf, LoadingComponent, SwipeDirective, CanvasRendererComponent, SingleRendererComponent,
     DoubleRendererComponent, DoubleReverseRendererComponent, DoubleNoCoverRendererComponent, InfiniteScrollerComponent,
-    NgxSliderModule, ReactiveFormsModule, NgFor, NgSwitch, NgSwitchCase, FittingIconPipe, ReaderModeIconPipe,
+    NgxSliderModule, ReactiveFormsModule, NgFor, NgSwitch, NgSwitchCase, ScalingIconPipe, ReaderModeIconPipe,
     FullscreenIconPipe, TranslocoDirective, NgbProgressbar, PercentPipe, NgClass, AsyncPipe, LayoutModeIconComponent,
-    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModeTextPipe, FittingOptionTextPipe, MangaPaginationOverlayComponent]
+    PageSplitIconComponent, ImageScalingIconComponent, MangaLayoutModeTextPipe, MangaPaginationOverlayComponent, ScalingOptionTextPipe]
 })
 export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -167,6 +167,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly ReadingDirection = ReadingDirection;
   protected readonly Breakpoint = Breakpoint;
   protected readonly Math = Math;
+  protected readonly FITTING_OPTION = FITTING_OPTION;
 
   libraryId!: number;
   seriesId!: number;
@@ -203,23 +204,36 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   user!: User;
   generalSettingsForm!: FormGroup;
 
+  /**
+   * Used to refresh the readerSettings stream of data
+   */
+  refreshReaderSettings = new EventEmitter<void>();
+
   readingDirection = ReadingDirection.LeftToRight;
   readingDirectionSubject = new BehaviorSubject(this.readingDirection);
   readingDirection$ = this.readingDirectionSubject.asObservable().pipe(distinctUntilChanged());
 
   scalingOption = ScalingOption.FitToHeight;
-  pageSplitOption = PageSplitOption.FitSplit;
-
-  isFullscreen: boolean = false;
-  autoCloseMenu: boolean = true;
+  scalingOptionSubject: Subject<ScalingOption> = new BehaviorSubject(this.scalingOption);
+  scalingOption$: Observable<ScalingOption> = this.scalingOptionSubject.asObservable().pipe(distinctUntilChanged());
 
   readerMode: ReaderMode = ReaderMode.LeftRight;
   readerModeSubject = new BehaviorSubject(this.readerMode);
   readerMode$: Observable<ReaderMode> = this.readerModeSubject.asObservable().pipe(distinctUntilChanged());
 
+  /**
+   * This is the direction we are going for pagination codes
+   */
   pagingDirection: PAGING_DIRECTION = PAGING_DIRECTION.FORWARD;
   pagingDirectionSubject: Subject<PAGING_DIRECTION> = new BehaviorSubject(this.pagingDirection);
   pagingDirection$: Observable<PAGING_DIRECTION> = this.pagingDirectionSubject.asObservable().pipe(distinctUntilChanged());
+
+  pageSplitOption = PageSplitOption.FitSplit;
+
+  isFullscreen: boolean = false;
+  autoCloseMenu: boolean = true;
+
+
 
 
   pageSplitOptionsTranslated = pageSplitOptions.map(this.translatePrefOptions);
@@ -443,7 +457,10 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.readingArea?.nativeElement?.clientHeight + 'px';
   }
 
-  get FittingOption() { return this.generalSettingsForm?.get('fittingOption')?.value || FITTING_OPTION.HEIGHT; }
+  get FittingOption() {
+    return this.generalSettingsForm?.get('fittingOption')?.value || FITTING_OPTION.HEIGHT;
+  }
+
   get ReadingAreaWidth() {
     return this.readingArea?.nativeElement.scrollWidth - this.readingArea?.nativeElement.clientWidth;
   }
@@ -493,7 +510,7 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.user = user;
       this.hasBookmarkRights = this.accountService.hasBookmarkRole(user) || this.accountService.hasAdminRole(user);
       this.readingDirection = this.user.preferences.readingDirection;
-      this.scalingOption = this.user.preferences.scalingOption;
+      this.scalingOption = this.mangaReaderService.calculateAutomaticScaling(this.user.preferences.scalingOption);  // If Automatic, remap it for the user
       this.pageSplitOption = this.user.preferences.pageSplitOption;
       this.autoCloseMenu = this.user.preferences.autoCloseMenu;
       this.readerMode = this.user.preferences.readerMode;
@@ -501,10 +518,11 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.backgroundColor = this.user.preferences.backgroundColor || '#000000';
       this.readerService.setOverrideStyles(this.backgroundColor);
 
+
       this.generalSettingsForm = this.formBuilder.nonNullable.group({
         autoCloseMenu: new FormControl(this.autoCloseMenu),
         pageSplitOption: new FormControl(this.pageSplitOption),
-        fittingOption: new FormControl(this.mangaReaderService.translateScalingOption(this.scalingOption)),
+        scalingOption: new FormControl(this.scalingOption),
         layoutMode: new FormControl(this.layoutMode),
         darkness: new FormControl(100),
         emulateBook: new FormControl(this.user.preferences.emulateBook),
@@ -515,22 +533,63 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         readerMode: new FormControl(this.user.preferences.readerMode),
       });
 
+
       this.readerModeSubject.next(this.readerMode);
       this.pagingDirectionSubject.next(this.pagingDirection);
       this.layoutModeSubject.next(this.layoutMode);
+      this.scalingOptionSubject.next(this.scalingOption);
 
-      const formChanges$ = this.generalSettingsForm.valueChanges.pipe(
-        distinctUntilChanged((prev, curr) => {
-          const same = this.utilityService.deepEqual(prev, curr);
-          //console.log('prev: ', prev, '  curr: ', curr, ' is same: ', same);
-          return same;
+      this.generalSettingsForm.get('scalingOption')?.valueChanges.pipe(
+        tap(d => {
+          this.scalingOptionSubject.next(d);
         }),
-        //debounceTime(10),
-        //tap(v => console.log('Form Value Change on formChanges$', v)),
         takeUntilDestroyed(this.destroyRef)
-      );
+      ).subscribe();
 
-      formChanges$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => { // this.generalSettingsForm.valueChanges
+      this.scalingOption$.pipe(
+        distinctUntilChanged(),
+        tap(mode => {
+          this.scalingOption = mode;
+          this.generalSettingsForm.get('scalingOption')!.setValue(this.scalingOption, {emitEvent: false});
+          this.refreshReaderSettings.emit();
+          this.cdRef.detectChanges();
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+
+
+
+      this.generalSettingsForm.get('layoutMode')?.valueChanges.pipe(
+        tap(d => {
+          this.layoutModeSubject.next(d);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+
+      this.layoutMode$.pipe(
+        distinctUntilChanged(),
+        tap(mode => {
+          this.layoutMode = mode;
+          this.generalSettingsForm.get('layoutMode')!.setValue(this.layoutMode, {emitEvent: false});
+          console.log('Updating layout mode from subject: ', mode)
+
+          this.disableDoubleRendererIfScreenTooSmall(false);
+          this.refreshSettingsForLayoutModeChange(false);
+          this.refreshReaderSettings.emit();
+          this.cdRef.detectChanges();
+
+          // Re-render the current page when we switch layouts
+          this.setPageNum(this.adjustPagesForDoubleRenderer(this.pageNum));
+          this.loadPage();
+
+          this.cdRef.markForCheck();
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+
+      const refreshRenderers$ = this.refreshReaderSettings.asObservable().pipe(tap(_ => console.log('Refresh Renderers triggered')));
+
+      this.generalSettingsForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
         this.autoCloseMenu = this.generalSettingsForm.get('autoCloseMenu')?.value;
         this.pageSplitOption = parseInt(this.generalSettingsForm.get('pageSplitOption')?.value, 10);
 
@@ -544,44 +603,47 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-
-
-
-      const layoutChanges$ = merge(
-        this.layoutMode$,
-        this.generalSettingsForm.get('layoutMode')?.valueChanges as Observable<LayoutMode>) //.pipe(distinctUntilChanged())
-      .pipe(
-        distinctUntilChanged(),
-        tap(mode => {
-          const changeOccurred = mode !== this.layoutMode;
-
-          //console.log('layout mode observable tap triggered', mode);
-          if (changeOccurred) {
-            this.layoutMode = mode;
-            this.generalSettingsForm.get('layoutMode')!.setValue(this.layoutMode);
-
-            this.disableDoubleRendererIfScreenTooSmall(false);
-            this.refreshSettingsForLayoutModeChange(false);
-            this.cdRef.detectChanges();
-
-            // Re-render the current page when we switch layouts
-            this.setPageNum(this.adjustPagesForDoubleRenderer(this.pageNum));
-            this.loadPage();
-          }
+      const formChanges$ = this.generalSettingsForm.valueChanges.pipe(
+        distinctUntilChanged((prev, curr) => {
+          const same = this.utilityService.deepEqual(prev, curr);
+          //console.log('prev: ', prev, '  curr: ', curr, ' is same: ', same);
+          return same;
         }),
+        tap(v => console.log('Form Value Change on formChanges$', v)),
+        // tap(_ => {
+        //   this.autoCloseMenu = this.generalSettingsForm.get('autoCloseMenu')?.value;
+        //   this.pageSplitOption = parseInt(this.generalSettingsForm.get('pageSplitOption')?.value, 10);
+        //
+        //   const needsSplitting = this.mangaReaderService.isWidePage(this.readerService.imageUrlToPageNum(this.canvasImage.src));
+        //   // If we need to split on a menu change, then we need to re-render.
+        //   if (needsSplitting) {
+        //     // If we need to re-render, to ensure things layout properly, let's update paging direction & reset render
+        //     this.pagingDirectionSubject.next(PAGING_DIRECTION.FORWARD); // TODO: Shouldn't this update ReadingDirection too?
+        //     this.canvasRenderer.reset();
+        //     this.loadPage();
+        //   }
+        // }),
         takeUntilDestroyed(this.destroyRef)
       );
 
-      layoutChanges$.subscribe();
 
       // We need a mergeMap when page changes
-      this.readerSettings$ = merge(formChanges$, this.pagingDirection$, this.readerMode$, this.readingDirection$).pipe(
+      this.readerSettings$ = merge([
+        //this.generalSettingsForm.valueChanges,
+        formChanges$,
+        //this.pagingDirection$,
+        //this.readerMode$,
+        this.readingDirection$,
+        //this.scalingOption$,
+        //this.layoutMode$,
+        refreshRenderers$]).pipe(
         distinctUntilChanged(),
-        debounceTime(100),
-        //tap(_ => console.log('Updating reader settings in renderers')),
         map(_ => this.createReaderSettingsUpdate()),
+        tap(d => console.log('Updating reader settings in renderers')),
         takeUntilDestroyed(this.destroyRef),
       );
+
+      this.readerSettings$.subscribe();
 
       this.updateForm();
 
@@ -589,7 +651,11 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         distinctUntilChanged(),
         tap(dir => {
           this.pagingDirection = dir;
-          this.generalSettingsForm.get('pagingDirection')!.setValue(dir, {emitEvent: false});
+          this.generalSettingsForm.get('pagingDirection')!.setValue(dir); //, {emitEvent: false}
+          this.refreshReaderSettings.emit();
+          console.log('changing paging direction')
+
+          this.triggerOverlay();
           this.cdRef.markForCheck();
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -599,8 +665,10 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         distinctUntilChanged(),
         tap(mode => {
           this.readerMode = mode;
-          this.generalSettingsForm.get('readerMode')!.setValue(mode, {emitEvent: false});
-          this.disableDoubleRendererIfScreenTooSmall();
+          this.generalSettingsForm.get('readerMode')!.setValue(mode); //, {emitEvent: false}
+          this.refreshReaderSettings.emit();
+
+          this.triggerOverlay();
           this.cdRef.markForCheck();
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -705,16 +773,16 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  createReaderSettingsUpdate() {
+  createReaderSettingsUpdate(): ReaderSetting {
     return {
       pageSplit: parseInt(this.generalSettingsForm.get('pageSplitOption')?.value, 10),
-      fitting: (this.generalSettingsForm.get('fittingOption')?.value as FITTING_OPTION),
+      scalingOption: this.scalingOption,
       layoutMode: parseInt(this.generalSettingsForm.get('layoutMode')?.value, 10) as LayoutMode,
       darkness: parseInt(this.generalSettingsForm.get('darkness')?.value + '', 10) || 100,
       pagingDirection: this.pagingDirection,
-      readerMode: parseInt(this.generalSettingsForm.get('readerMode')?.value, 10), // this.readerMode,
+      readerMode: parseInt(this.generalSettingsForm.get('readerMode')?.value, 10),
       emulateBook: this.generalSettingsForm.get('emulateBook')?.value,
-      readingDirection: this.readingDirection
+      readingDirection: this.readingDirection,
     };
   }
 
@@ -778,8 +846,6 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return img;
   }
-
-
 
   isHorizontalScrollLeft() {
     const scrollLeft = this.readingArea?.nativeElement?.scrollLeft || 0;
@@ -1398,11 +1464,15 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
       this.readingDirectionSubject.next(ReadingDirection.LeftToRight);
     }
 
+    this.triggerOverlay();
+  }
 
+  triggerOverlay() {
     if (this.menuOpen && this.user.preferences.showScreenHints) {
       this.showClickOverlay = true;
       this.showClickOverlaySubject.next(true);
       this.cdRef.markForCheck();
+
       setTimeout(() => {
         this.showClickOverlay = false;
         this.showClickOverlaySubject.next(false);
@@ -1524,13 +1594,13 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.layoutMode === LayoutMode.Single) {
       this.generalSettingsForm.get('pageSplitOption')?.setValue(this.user.preferences.pageSplitOption, {emitEvent: emit});
       this.generalSettingsForm.get('pageSplitOption')?.enable({emitEvent: emit});
-      this.generalSettingsForm.get('fittingOption')?.enable({emitEvent: emit});
+      this.generalSettingsForm.get('scalingOption')?.enable({emitEvent: emit});
       this.generalSettingsForm.get('emulateBook')?.enable({emitEvent: emit});
     } else {
       this.generalSettingsForm.get('pageSplitOption')?.setValue(PageSplitOption.NoSplit, {emitEvent: emit});
       this.generalSettingsForm.get('pageSplitOption')?.disable({emitEvent: emit});
-      this.generalSettingsForm.get('fittingOption')?.setValue(this.mangaReaderService.translateScalingOption(ScalingOption.FitToHeight), {emitEvent: emit});
-      this.generalSettingsForm.get('fittingOption')?.disable({emitEvent: emit});
+      this.generalSettingsForm.get('scalingOption')?.setValue(ScalingOption.FitToHeight, {emitEvent: emit});
+      this.generalSettingsForm.get('scalingOption')?.disable({emitEvent: emit});
       this.generalSettingsForm.get('emulateBook')?.enable({emitEvent: emit});
     }
   }
@@ -1557,6 +1627,22 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fullscreenEvent.next(true);
         this.render();
       });
+  }
+
+  // This is menu only code
+  toggleImageScaling() {
+    switch(this.scalingOption) {
+      case ScalingOption.FitToHeight:
+        this.scalingOptionSubject.next(ScalingOption.FitToWidth);
+        break;
+      case ScalingOption.FitToWidth:
+        this.scalingOptionSubject.next(ScalingOption.Original);
+        break;
+      case ScalingOption.Original:
+        this.scalingOptionSubject.next(ScalingOption.FitToHeight);
+        break;
+    }
+    this.cdRef.markForCheck();
   }
 
   // This is menu only code
@@ -1606,16 +1692,16 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
   updateForm() {
     if ( this.layoutMode === LayoutMode.Webtoon) {
       this.generalSettingsForm.get('pageSplitOption')?.disable()
-      this.generalSettingsForm.get('fittingOption')?.disable()
+      this.generalSettingsForm.get('scalingOption')?.disable()
       this.generalSettingsForm.get('layoutMode')?.disable();
     } else {
-      this.generalSettingsForm.get('fittingOption')?.enable()
+      this.generalSettingsForm.get('scalingOption')?.enable()
       this.generalSettingsForm.get('pageSplitOption')?.enable();
       this.generalSettingsForm.get('layoutMode')?.enable();
 
       if (this.layoutMode !== LayoutMode.Single) {
         this.generalSettingsForm.get('pageSplitOption')?.disable();
-        this.generalSettingsForm.get('fittingOption')?.disable();
+        this.generalSettingsForm.get('scalingOption')?.disable();
       }
     }
     this.cdRef.markForCheck();
@@ -1724,5 +1810,5 @@ export class MangaReaderComponent implements OnInit, AfterViewInit, OnDestroy {
     return d;
   }
 
-  protected readonly FITTING_OPTION = FITTING_OPTION;
+  protected readonly ScalingOption = ScalingOption;
 }

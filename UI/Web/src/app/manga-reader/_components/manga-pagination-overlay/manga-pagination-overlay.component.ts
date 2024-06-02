@@ -2,7 +2,8 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  DestroyRef, ElementRef, EventEmitter,
+  DestroyRef,
+  EventEmitter,
   inject,
   Input,
   OnInit,
@@ -15,10 +16,10 @@ import {Observable} from "rxjs";
 import {ReaderSetting} from "../../_models/reader-setting";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {tap} from "rxjs/operators";
-import {FITTING_OPTION, PAGING_DIRECTION} from "../../_models/reader-enums";
 import {TranslocoDirective} from "@ngneat/transloco";
 import {KeyDirection} from "../manga-reader/manga-reader.component";
 import {LayoutMode} from "../../_models/layout-mode";
+import {ScalingOption} from "../../../_models/preferences/scaling-option";
 
 @Component({
   selector: 'app-manga-pagination-overlay',
@@ -55,11 +56,11 @@ export class MangaPaginationOverlayComponent implements OnInit {
   readerMode!: ReaderMode;
   readingDirection!: ReadingDirection;
   layoutMode!: LayoutMode;
-  fittingOption!: FITTING_OPTION;
+  scalingOption!: ScalingOption;
   showClickOverlay: boolean = true;
 
   get RightPaginationOffset() {
-    if (this.readerMode === ReaderMode.LeftRight && this.fittingOption !== FITTING_OPTION.WIDTH) {
+    if (this.readerMode === ReaderMode.LeftRight && this.scalingOption !== ScalingOption.FitToWidth) {
       return (this.readingArea?.scrollLeft || 0) * -1;
     }
     return 0;
@@ -71,7 +72,9 @@ export class MangaPaginationOverlayComponent implements OnInit {
         this.readerMode = settings.readerMode;
         this.readingDirection = settings.readingDirection;
         this.layoutMode = settings.layoutMode;
-        this.fittingOption = settings.fitting;
+        this.scalingOption = settings.scalingOption;
+
+        console.log('pagination readerMode: ', this.readerMode);
         this.cdRef.markForCheck();
       }),
       takeUntilDestroyed(this.destroyRef)
@@ -80,7 +83,6 @@ export class MangaPaginationOverlayComponent implements OnInit {
     this.showClickOverlay$.pipe(
       tap(showClickOverlay => {
         this.showClickOverlay = showClickOverlay;
-        console.log('showClickOverlay: ', this.showClickOverlay);
         this.cdRef.markForCheck();
       }),
       takeUntilDestroyed(this.destroyRef)

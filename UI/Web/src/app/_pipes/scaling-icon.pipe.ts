@@ -1,22 +1,24 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { FITTING_OPTION } from '../manga-reader/_models/reader-enums';
+import {ScalingOption} from "../_models/preferences/scaling-option";
 
 @Pipe({
-  name: 'fittingIcon',
+  name: 'scalingIcon',
   pure: true,
   standalone: true,
 })
-export class FittingIconPipe implements PipeTransform {
+export class ScalingIconPipe implements PipeTransform {
 
-  transform(fit: FITTING_OPTION): string {
+  transform(fit: ScalingOption): string {
     switch(fit) {
-      case FITTING_OPTION.HEIGHT:
+      case ScalingOption.FitToHeight:
         return 'fa fa-arrows-alt-v';
-      case FITTING_OPTION.WIDTH:
+      case ScalingOption.FitToWidth:
         return 'fa fa-arrows-alt-h';
-      case FITTING_OPTION.ORIGINAL:
+      case ScalingOption.Original:
         return 'fa fa-expand-arrows-alt';
     }
+    return '';
   }
 
 }

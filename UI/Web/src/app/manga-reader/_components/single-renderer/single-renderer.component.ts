@@ -20,6 +20,7 @@ import { ImageRenderer } from '../../_models/renderer';
 import { MangaReaderService } from '../../_service/manga-reader.service';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import { SafeStylePipe } from '../../../_pipes/safe-style.pipe';
+import {ScalingOption} from "../../../_models/preferences/scaling-option";
 
 @Component({
     selector: 'app-single-renderer',
@@ -125,17 +126,17 @@ export class SingleRendererComponent implements OnInit, ImageRenderer {
     ).subscribe(() => {});
 
     this.imageFitClass$ = combineLatest([this.readerSettings$, this.pageNum$]).pipe(
-      map(values => values[0].fitting),
+      map(values => values[0].scalingOption),
       map(fit => {
         if (
           this.mangaReaderService.isWidePage(this.pageNum) &&
           this.mangaReaderService.shouldRenderAsFitSplit(this.pageSplit)
           ) {
           // Rewriting to fit to width for this cover image
-          return FITTING_OPTION.WIDTH + ' fit-to-screen wide';
+          return this.mangaReaderService.translateScalingOption(ScalingOption.FitToWidth) + ' fit-to-screen wide';
         }
 
-        return fit;
+        return this.mangaReaderService.translateScalingOption(fit);
       }),
       shareReplay({refCount: true, bufferSize: 1}),
       filter(_ => this.isValid()),
@@ -145,19 +146,20 @@ export class SingleRendererComponent implements OnInit, ImageRenderer {
 
   private calculateImageContainerHeight$(): Observable<string> {
     return this.readerSettings$.pipe(
-      map(values => values.fitting),
+      map(values => values.scalingOption),
       map(mode => {
-        if (mode !== FITTING_OPTION.HEIGHT) return '';
+        if (mode !== ScalingOption.FitToWidth) return '';
 
-        const readingArea = this.document.querySelector('.reading-area');
-        if (!readingArea) return 'calc(100dvh)';
-
-        // If you ever see fit to height and a bit of scrollbar, it's due to currentImage not being ready on first load
-        if (this.currentImage?.width - readingArea.scrollWidth > 0) {
-          // we also need to check if this is FF or Chrome. FF doesn't require the -34px as it doesn't render a scrollbar
-          return 'calc(100dvh)';
-        }
-        return 'calc(100dvh)';
+        return 'calc(100dvh)'; // The below code was required before we switched to dvh
+        // const readingArea = this.document.querySelector('.reading-area');
+        // if (!readingArea) return 'calc(100dvh)';
+        //
+        // // If you ever see fit to height and a bit of scrollbar, it's due to currentImage not being ready on first load
+        // if (this.currentImage?.width - readingArea.scrollWidth > 0) {
+        //   // we also need to check if this is FF or Chrome. FF doesn't require the -34px as it doesn't render a scrollbar
+        //   return 'calc(100dvh)';
+        // }
+        // return 'calc(100dvh)';
       }),
       filter(_ => this.isValid())
     );

@@ -1,11 +1,11 @@
-import { ElementRef, Injectable, Renderer2, RendererFactory2 } from '@angular/core';
-import { PageSplitOption } from 'src/app/_models/preferences/page-split-option';
-import { ScalingOption } from 'src/app/_models/preferences/scaling-option';
-import { ReaderService } from 'src/app/_services/reader.service';
-import { ChapterInfo } from '../_models/chapter-info';
-import { DimensionMap } from '../_models/file-dimension';
-import { FITTING_OPTION } from '../_models/reader-enums';
-import { BookmarkInfo } from 'src/app/_models/manga-reader/bookmark-info';
+import {ElementRef, Injectable, Renderer2, RendererFactory2} from '@angular/core';
+import {PageSplitOption} from 'src/app/_models/preferences/page-split-option';
+import {ScalingOption} from 'src/app/_models/preferences/scaling-option';
+import {ReaderService} from 'src/app/_services/reader.service';
+import {ChapterInfo} from '../_models/chapter-info';
+import {DimensionMap} from '../_models/file-dimension';
+import {FITTING_OPTION} from '../_models/reader-enums';
+import {BookmarkInfo} from 'src/app/_models/manga-reader/bookmark-info';
 
 @Injectable({
   providedIn: 'root'
@@ -120,6 +120,26 @@ export class MangaReaderService {
   }
 
 
+  calculateAutomaticScaling(option: ScalingOption) {
+    if (option != ScalingOption.Automatic) return option;
+
+    const windowWidth = window.innerWidth
+      || document.documentElement.clientWidth
+      || document.body.clientWidth;
+    const windowHeight = window.innerHeight
+      || document.documentElement.clientHeight
+      || document.body.clientHeight;
+
+    const ratio = windowWidth / windowHeight;
+    if (windowHeight > windowWidth) {
+      return ScalingOption.FitToWidth;
+    }
+
+    if (windowWidth >= windowHeight || ratio > 1.0) {
+      return ScalingOption.FitToHeight;
+    }
+    return ScalingOption.FitToWidth;
+  }
   translateScalingOption(option: ScalingOption) {
     switch (option) {
       case (ScalingOption.Automatic):

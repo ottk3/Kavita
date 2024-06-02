@@ -22,6 +22,7 @@ import { MangaReaderService } from '../../_service/manga-reader.service';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import { SafeStylePipe } from '../../../_pipes/safe-style.pipe';
 import { NgClass, AsyncPipe } from '@angular/common';
+import {ReadingDirection} from "../../../_models/preferences/reading-direction";
 
 const ValidSplits = [PageSplitOption.SplitLeftToRight, PageSplitOption.SplitRightToLeft];
 
@@ -71,7 +72,7 @@ export class CanvasRendererComponent implements OnInit, AfterViewInit, ImageRend
 
   ngOnInit(): void {
     this.readerSettings$.pipe(takeUntilDestroyed(this.destroyRef), tap((value: ReaderSetting) => {
-      this.fit = value.fitting;
+      this.fit = this.mangaReaderService.translateScalingOption(value.scalingOption);
       this.pageSplit = value.pageSplit;
       this.layoutMode = value.layoutMode;
       const rerenderNeeded = this.pageSplit != value.pageSplit;
@@ -89,7 +90,7 @@ export class CanvasRendererComponent implements OnInit, AfterViewInit, ImageRend
 
     this.imageFitClass$ = this.readerSettings$.pipe(
       takeUntilDestroyed(this.destroyRef),
-      map((values: ReaderSetting) => values.fitting),
+      map((values: ReaderSetting) => this.mangaReaderService.translateScalingOption(values.scalingOption)),
       map(fit => {
         if (fit === FITTING_OPTION.WIDTH) return fit; // || this.layoutMode === LayoutMode.Single (so that we can check the wide stuff)
         if (this.canvasImage === null) return fit;
@@ -234,7 +235,7 @@ export class CanvasRendererComponent implements OnInit, AfterViewInit, ImageRend
 
   shouldMoveNext() {
     if (this.mangaReaderService.isNoSplit(this.pageSplit)) return true;
-    const isSplitLeftToRight = this.mangaReaderService.isSplitLeftToRight(this.pageSplit);
+    //const isSplitLeftToRight = this.mangaReaderService.isSplitLeftToRight(this.pageSplit);
     return this.currentImageSplitPart !== (this.mangaReaderService.isSplitLeftToRight(this.pageSplit) ? SPLIT_PAGE_PART.LEFT_PART : SPLIT_PAGE_PART.RIGHT_PART);
   }
 

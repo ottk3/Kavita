@@ -48,7 +48,7 @@ export class ImageService {
   }
 
   /**
-   * Returns the entity type from a cover image url. Undefied if not applicable
+   * Returns the entity type from a cover image url. Undefined if not applicable
    * @param url
    * @returns
    */

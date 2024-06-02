@@ -3,10 +3,11 @@ import { ReaderMode } from "src/app/_models/preferences/reader-mode";
 import { LayoutMode } from "./layout-mode";
 import { FITTING_OPTION, PAGING_DIRECTION } from "./reader-enums";
 import {ReadingDirection} from "../../_models/preferences/reading-direction";
+import {ScalingOption} from "../../_models/preferences/scaling-option";
 
 export interface ReaderSetting {
     pageSplit: PageSplitOption;
-    fitting: FITTING_OPTION;
+    scalingOption: ScalingOption;
     layoutMode: LayoutMode;
     darkness: number;
     pagingDirection: PAGING_DIRECTION;
